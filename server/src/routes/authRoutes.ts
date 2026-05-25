@@ -8,10 +8,10 @@
  * כולל רישום, התחברות ונתיבים מוגנים לפי תפקידים
  */
 import { FastifyInstance } from 'fastify';
-import { register, login } from '../controllers/authController';
-import { verifyToken } from '../middlewares/authMiddleware';
-import { checkRole } from '../middlewares/roleMiddleware';
-import { ROLES } from '../constants/roles'; // זה הקובץ שיצרנו
+import { register, login } from '../controllers/authController.js';
+import { verifyToken } from '../middlewares/authMiddleware.js';
+import { checkRole } from '../middlewares/roleMiddleware.js';
+import { ROLES } from '../constants/roles.js'; // זה הקובץ שיצרנו
 
 /**
  * הגדרת נתיבי אימות (Authentication Routes)
