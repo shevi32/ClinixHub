@@ -1,3 +1,3 @@
-README — models
+<!-- README — models
 
-כאן יישמרו מודלים של DB (Mongoose schemas) כמו User (patients/therapists) ו־Appointment.
+כאן יישמרו מודלים של DB (Mongoose schemas) כמו User (patients/therapists) ו־Appointment. -->
