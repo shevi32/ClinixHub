@@ -20,7 +20,7 @@ export default function AppointmentsDashboard() {
   const [patientId, setPatientId] = useState("");
 
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const limit = 5;
   const [totalPages, setTotalPages] = useState(1);
 
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -139,9 +139,21 @@ export default function AppointmentsDashboard() {
       {/* TABLE */}
       {appointments.map((a) => (
         <div key={a._id} style={{ border: "1px solid #ddd", margin: 5, padding: 10 }}>
-          <div>{a.patientId}</div>
-          <div>{a.therapistId}</div>
-          <div>{a.status}</div>
+         <div>{a.patientId}</div>
+
+<div>{a.therapistId}</div>
+
+<div>
+  Start:
+  {new Date(a.startTime).toLocaleString()}
+</div>
+
+<div>
+  End:
+  {new Date(a.endTime).toLocaleString()}
+</div>
+
+<div>{a.status}</div>
 
           <button onClick={() => setEditingAppointment(a)}>Edit</button>
 
