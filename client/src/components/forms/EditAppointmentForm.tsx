@@ -69,31 +69,93 @@ export default function EditAppointmentForm({
     }
   };
 
-  return (
-    <div style={{ border: "1px solid gray", padding: 10 }}>
+return (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 999,
+    }}
+  >
+    <div
+      style={{
+        background: "white",
+        padding: 20,
+        borderRadius: 10,
+        width: 400,
+      }}
+    >
       <h3>Edit Appointment</h3>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && (
+        <p style={{ color: "red" }}>
+          {error}
+        </p>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <input {...register("patientId")} placeholder="Patient ID" />
-        <p style={{ color: "red" }}>{errors.patientId?.message}</p>
+        <input
+          {...register("patientId")}
+          placeholder="Patient ID"
+        />
 
-        <input {...register("therapistId")} placeholder="Therapist ID" />
-        <p style={{ color: "red" }}>{errors.therapistId?.message}</p>
+        <p style={{ color: "red" }}>
+          {errors.patientId?.message}
+        </p>
 
-        <input type="datetime-local" {...register("startTime")} />
-        <p style={{ color: "red" }}>{errors.startTime?.message}</p>
+        <input
+          {...register("therapistId")}
+          placeholder="Therapist ID"
+        />
 
-        <input type="datetime-local" {...register("endTime")} />
-        <p style={{ color: "red" }}>{errors.endTime?.message}</p>
+        <p style={{ color: "red" }}>
+          {errors.therapistId?.message}
+        </p>
 
-        <button disabled={isSubmitting}>Save</button>
+        <input
+          type="datetime-local"
+          {...register("startTime")}
+        />
 
-        <button type="button" onClick={onClose}>
-          Cancel
-        </button>
+        <p style={{ color: "red" }}>
+          {errors.startTime?.message}
+        </p>
+
+        <input
+          type="datetime-local"
+          {...register("endTime")}
+        />
+
+        <p style={{ color: "red" }}>
+          {errors.endTime?.message}
+        </p>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            marginTop: 10,
+          }}
+        >
+          <button disabled={isSubmitting}>
+            Save
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+        </div>
       </form>
     </div>
-  );
-}
+  </div>
+);}
