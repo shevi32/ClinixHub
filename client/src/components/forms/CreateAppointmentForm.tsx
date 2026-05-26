@@ -2,14 +2,13 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { appointmentSchema } from "./appointmentSchema";
 
-const appointmentSchema = z.object({
-  patientId: z.string().min(1, "Patient is required"),
-  therapistId: z.string().min(1, "Therapist is required"),
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
-  status: z.enum(["scheduled", "completed", "cancelled"]),
-});
+/* =========================
+   ZOD VALIDATION
+========================= */
+
+type FormData = z.infer<typeof appointmentSchema>;
 
 export default function CreateAppointmentForm() {
   const [successMessage, setSuccessMessage] = useState("");
@@ -18,23 +17,20 @@ export default function CreateAppointmentForm() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
-  } = useForm({
+  } = useForm<FormData>({
     resolver: zodResolver(appointmentSchema),
-    defaultValues: {
-      status: "scheduled",
-    },
   });
-  console.log("ERRORS:", errors); // 👈 כאן בדיוק
 
-  const onSubmit = async (data: any) => {
-      console.log("SUBMIT FIRED", data);
+  const onSubmit = async (data: FormData) => {
     try {
       setServerError("");
       setSuccessMessage("");
 
       const payload = {
-        ...data,
+        patientId: data.patientId,
+        therapistId: data.therapistId,
         startTime: new Date(data.startTime).toISOString(),
         endTime: new Date(data.endTime).toISOString(),
       };
@@ -52,53 +48,88 @@ export default function CreateAppointmentForm() {
 
       const result = await response.json();
 
-      // ❗ טיפול בשגיאות מפורט
       if (!response.ok) {
-        const errorsText =
-          result.errors
-            ?.map((e: any) => `${e.path?.join(".")}: ${e.message}`)
-            .join("\n");
+        const errorsText = result.errors
+          ?.map(
+            (e: any) =>
+              `${e.path?.join(".")}: ${e.message}`
+          )
+          .join("\n");
 
-        setServerError(errorsText || result.message || "Unknown error");
+        setServerError(
+          errorsText ||
+            result.message ||
+            "Unknown error"
+        );
+
         return;
       }
 
-      setSuccessMessage("Appointment created successfully ✔");
+      setSuccessMessage(
+        "Appointment created successfully ✔"
+      );
+
+      reset();
     } catch (err: any) {
-      setServerError(err.message || "Network error");
+      setServerError(
+        err.message || "Network error"
+      );
     }
   };
 
   return (
     <div>
-      {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
+      {successMessage && (
+        <p style={{ color: "green" }}>
+          {successMessage}
+        </p>
+      )}
+
       {serverError && (
-        <pre style={{ color: "red" }}>{serverError}</pre>
+        <pre style={{ color: "red" }}>
+          {serverError}
+        </pre>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <h2>Create Appointment</h2>
 
-        <input placeholder="Patient ID" {...register("patientId")} />
-        <p>{errors.patientId?.message}</p>
+        <input
+          placeholder="Patient ID"
+          {...register("patientId")}
+        />
+        <p style={{ color: "red" }}>
+          {errors.patientId?.message}
+        </p>
 
-        <input placeholder="Therapist ID" {...register("therapistId")} />
-        <p>{errors.therapistId?.message}</p>
+        <input
+          placeholder="Therapist ID"
+          {...register("therapistId")}
+        />
+        <p style={{ color: "red" }}>
+          {errors.therapistId?.message}
+        </p>
 
-        <input type="datetime-local" {...register("startTime")} />
-        <p>{errors.startTime?.message}</p>
+        <input
+          type="datetime-local"
+          {...register("startTime")}
+        />
+        <p style={{ color: "red" }}>
+          {errors.startTime?.message}
+        </p>
 
-        <input type="datetime-local" {...register("endTime")} />
-        <p>{errors.endTime?.message}</p>
-
-        <select {...register("status")}>
-          <option value="scheduled">Scheduled</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+        <input
+          type="datetime-local"
+          {...register("endTime")}
+        />
+        <p style={{ color: "red" }}>
+          {errors.endTime?.message}
+        </p>
 
         <button type="submit" disabled={isSubmitting}>
-          Create Appointment
+          {isSubmitting
+            ? "Creating..."
+            : "Create Appointment"}
         </button>
       </form>
     </div>
