@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import dotenv from 'dotenv';
-import { authRoutes } from './routes/authRoutes'; // מייבאים את הראוטים שיצרנו
+import { authRoutes } from './routes/authRoutes.js';
 
 dotenv.config();
 
