@@ -1,5 +1,5 @@
 import express from "express";
-
+console.log("=== מה הראוטר קיבל מהקונטרולר? ===", { createPatient, getPatients });
 import {
   createPatient,
   getPatients,
@@ -7,7 +7,7 @@ import {
   updatePatient,
   deletePatient,
 } from "../controllers/patient.controller";
-
+console.log("=== מה הראוטר קיבל מהקונטרולר? ===", { createPatient, getPatients });
 const router = express.Router();
 
 // CREATE
