@@ -21,7 +21,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { ROLES } from '../constants/roles'; // שימוש בקבועים המשותפים
+import { ROLES } from '../constants/roles.js';
 
 // מערך זמני בזיכרון
 const users: any[] = [];

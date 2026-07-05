@@ -1,64 +1,80 @@
 import { createContext, useState, useEffect, ReactNode } from 'react';
+import { useDispatch } from 'react-redux';
+import { setCredentials, clearCredentials } from '../redux/authSlice.js';
 import api from '../utils/api.js';
 
-// 1. הגדרת מבנה הנתונים של המשתמש
-export interface User {
+interface User {
   id: string;
   email: string;
-  role: 'Admin' | 'User'; // Admin = מטפל, User = מטופל/הורה
+  role: 'Admin' | 'User';
 }
 
-// 2. הגדרת המבנה של הסטייט שהרכיבים באפליקציה יוכלו לצרוך
 interface AuthContextType {
-  user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
+  user: User | null;
   isLoading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
 }
 
-// 3. יצירת ה-Context עצמו עם ערך ברירת מחדל ריק
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 4. רכיב העטיפה המרכזי (Provider)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // מונע הבזק של עמוד ה-Login בזמן טעינה
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // 1. הגדרת ה-dispatch של Redux בתוך הקומפוננטה
+  const dispatch = useDispatch();
 
-  // טעינת הנתונים מה-LocalStorage עם העלייה הראשונה של האפליקציה
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    const initializeAuth = () => {
+      try {
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
 
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false); // סיום בדיקת הנתונים המקומיים
-  }, []);
+        if (token && storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          
+          // סנכרון ראשוני: אם נמצא משתמש ב-LocalStorage, נעדכן גם את Redux
+          dispatch(setCredentials({ user: parsedUser }));
+        }
+      } catch (error) {
+        console.error('Failed to parse user from localStorage', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // פונקציית התחברות - נקראת לאחר לוגין מוצלח בשרת
-  const login = (newToken: string, newUser: User) => {
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
+    initializeAuth();
+  }, [dispatch]);
+
+  // 2. פונקציית התחברות - מעדכנת LocalStorage, Context ו-Redux
+  const login = (token: string, user: User) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    setUser(user);
+    
+    // שליחת הנתונים ל-Redux
+    dispatch(setCredentials({ user }));
   };
 
-  // פונקציית התנתקות - מנקה את הסטייט ואת האחסון המקומי
+  // 3. פונקציית התנתקות - מנקה LocalStorage, Context ו-Redux
   const logout = () => {
-    setToken(null);
-    setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    setUser(null);
+    
+    // ניקוי הנתונים מ-Redux
+    dispatch(clearCredentials());
   };
 
-  const isAuthenticated = !!user; // משתנה בוליאני הנגזר מקיום אובייקט משתמש
+  const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

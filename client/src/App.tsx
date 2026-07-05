@@ -1,17 +1,32 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext.js";
-import { ProtectedRoute } from "./components/ProtectedRoute.js";
+import React from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
+import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+
+// Appointment components
 import CreateAppointmentForm from "./components/forms/CreateAppointmentForm";
 import AppointmentsDashboard from "./components/appointments/AppointmentsDashboard";
 import PatientsPage from "./components/patients/PatientsPage";
 import TreatmentPage from "./components/treatments/TreatmentPage";
 
-// Temporary pages (you can move these to /pages later)
-const Home = () => <h1>Home (Public)</h1>;
-const Login = () => <h1>Login Page</h1>;
+// Patient pages
+import BookAppointment from "./pages/BookAppointment";
+import AppointmentHistory from "./pages/AppointmentHistory";
+import PatientDashboard from "./pages/PatientDashboard";
+
+// Auth pages
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+
+// Temporary pages
+const Home = () => <h1>Home</h1>;
 const TherapistDashboard = () => <h1>Therapist Dashboard</h1>;
-const PatientDashboard = () => <h1>Patient Dashboard</h1>;
 
 export default function App() {
   return (
@@ -21,14 +36,21 @@ export default function App() {
           {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-          {/* Appointment-related routes */}
-          <Route path="/create-appointment" element={<CreateAppointmentForm />} />
-          <Route path="/appointments" element={<AppointmentsDashboard />} />
+          {/* Appointment management */}
+          <Route
+            path="/create-appointment"
+            element={<CreateAppointmentForm />}
+          />
+          <Route
+            path="/appointments"
+            element={<AppointmentsDashboard />}
+          />
           <Route path="/patients" element={<PatientsPage />} />
           <Route path="/treatments" element={<TreatmentPage />} />
 
-          {/* Protected patient route */}
+          {/* Patient routes */}
           <Route
             path="/patient-dashboard"
             element={
@@ -38,7 +60,25 @@ export default function App() {
             }
           />
 
-          {/* Protected therapist route */}
+          <Route
+            path="/book-appointment"
+            element={
+              <ProtectedRoute allowedRoles={["User"]}>
+                <BookAppointment />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/appointment-history"
+            element={
+              <ProtectedRoute allowedRoles={["User"]}>
+                <AppointmentHistory />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Therapist routes */}
           <Route
             path="/therapist-dashboard"
             element={
@@ -47,6 +87,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

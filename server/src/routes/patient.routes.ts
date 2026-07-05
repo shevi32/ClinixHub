@@ -6,7 +6,7 @@ import {
   getPatientById,
   updatePatient,
   deletePatient,
-} from "../controllers/patient.controller";
+} from "../controllers/patient.controller.js";
 console.log("=== מה הראוטר קיבל מהקונטרולר? ===", { createPatient, getPatients });
 const router = express.Router();
 
