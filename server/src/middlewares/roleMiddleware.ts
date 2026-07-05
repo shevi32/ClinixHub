@@ -16,7 +16,7 @@
 //     };
 // };
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { ROLES } from '../constants/roles'; // ייבוא התפקידים מהקובץ החדש
+import { ROLES } from '../constants/roles.js'; // ייבוא התפקידים מהקובץ החדש
 
 /**
  * Middleware לבדיקת הרשאות לפי תפקיד
