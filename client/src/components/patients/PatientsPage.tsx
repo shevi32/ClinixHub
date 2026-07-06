@@ -23,7 +23,7 @@ export default function PatientsPage() {
       setLoading(true);
       setError("");
 
-      const res = await fetch("http://localhost:3000/api/patients");
+      const res = await fetch("http://localhost:5000/api/patients");
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message);
@@ -44,7 +44,7 @@ export default function PatientsPage() {
     try {
       setError("");
 
-      const res = await fetch("http://localhost:3000/api/patients", {
+      const res = await fetch("http://localhost:5000/api/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

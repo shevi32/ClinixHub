@@ -11,9 +11,7 @@ import { useState } from 'react';
 const registerSchema = z.object({
   email: z.string().email('כתובת אימייל אינה תקינה'),
   password: z.string().min(6, 'הסיסמה חייבת להכיל לפחות 6 תווים'),
-  role: z.enum(['Admin', 'User'], {
-    errorMap: () => ({ message: 'חובה לבחור תפקיד במערכת' }),
-  }),
+  role: z.enum(['Admin', 'User']),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;

@@ -46,7 +46,7 @@ export default function PatientsDashboard() {
       }
 
       const res = await fetch(
-        `http://localhost:3000/api/patients?${params.toString()}`
+        `http://localhost:5000/api/patients?${params.toString()}`
       );
 
       const data = await res.json();
@@ -72,7 +72,7 @@ export default function PatientsDashboard() {
   ) => {
     try {
       await fetch(
-        `http://localhost:3000/api/patients/${id}`,
+        `http://localhost:5000/api/patients/${id}`,
         {
           method: "DELETE",
         }

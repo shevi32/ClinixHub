@@ -27,7 +27,7 @@ export default function CreatePatientForm({
       setServerError("");
 
       const res = await fetch(
-        "http://localhost:3000/api/patients",
+        "http://localhost:5000/api/patients",
         {
           method: "POST",
           headers: {

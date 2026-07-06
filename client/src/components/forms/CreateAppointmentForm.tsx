@@ -36,7 +36,7 @@ export default function CreateAppointmentForm() {
       };
 
       const response = await fetch(
-        "http://localhost:3000/api/appointments",
+        "http://localhost:5000/api/appointments",
         {
           method: "POST",
           headers: {

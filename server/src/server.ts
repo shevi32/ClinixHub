@@ -1,13 +1,14 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import dotenv from 'dotenv';
 import mongoose from "mongoose";
-import { authRoutes } from './routes/authRoutes.js'; // ודאי סיומת מתאימה אם צריך
+import { authRoutes } from './routes/authRoutes.js';
 
 dotenv.config();
 
 const fastify = Fastify({ logger: true });
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/clinixhub";
 
 // חיבור ל-Database מהענף שלך
@@ -21,9 +22,6 @@ const connectDB = async () => {
   }
 };
 
-// רישום נתיבי ה-Auth וה-Health מתוך ענף התשתית
-fastify.register(authRoutes);
-
 fastify.get('/health', async () => {
   return { status: 'Server is running' };
 });
@@ -31,7 +29,14 @@ fastify.get('/health', async () => {
 // הפעלת השרת המשולב
 const start = async () => {
   try {
-    await connectDB(); // מריץ את החיבור ל-DB לפני הפעלת השרת
+    await connectDB();
+    await fastify.register(cors, {
+      origin: 'http://localhost:5173',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
+    });
+    fastify.register(authRoutes, { prefix: '/auth' });
     await fastify.listen({ port: PORT, host: '0.0.0.0' });
     console.log(`🚀 Server running on port ${PORT}`);
   } catch (err) {

@@ -23,7 +23,6 @@ export default function AppointmentsDashboard() {
   const limit = 5;
   const [totalPages, setTotalPages] = useState(1);
 
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
 
   const fetchAppointments = async (pageNumber = 1) => {
@@ -40,7 +39,7 @@ export default function AppointmentsDashboard() {
       if (patientId) params.append("patientId", patientId);
 
       const res = await fetch(
-        `http://localhost:3000/api/appointments?${params.toString()}`
+        `http://localhost:5000/api/appointments?${params.toString()}`
       );
 
       const data = await res.json();
@@ -63,45 +62,39 @@ export default function AppointmentsDashboard() {
 
   const cancelAppointment = async (id: string) => {
     try {
-      setActionLoadingId(id);
-
-      await fetch(`http://localhost:3000/api/appointments/${id}/cancel`, {
+      await fetch(`http://localhost:5000/api/appointments/${id}/cancel`, {
         method: "PATCH",
       });
 
       fetchAppointments(page);
-    } finally {
-      setActionLoadingId(null);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
   const deleteAppointment = async (id: string) => {
     try {
-      setActionLoadingId(id);
-
-      await fetch(`http://localhost:3000/api/appointments/${id}`, {
+      await fetch(`http://localhost:5000/api/appointments/${id}`, {
         method: "DELETE",
       });
 
       fetchAppointments(page);
-    } finally {
-      setActionLoadingId(null);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      setActionLoadingId(id);
-
-      await fetch(`http://localhost:3000/api/appointments/${id}`, {
+      await fetch(`http://localhost:5000/api/appointments/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
 
       fetchAppointments(page);
-    } finally {
-      setActionLoadingId(null);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
