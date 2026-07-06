@@ -1,10 +1,11 @@
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect} from 'react';
+import type { ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 import { setCredentials, clearCredentials } from '../redux/authSlice.js';
-import api from '../utils/api.js';
 
 interface User {
   id: string;
+  name: string;
   email: string;
   role: 'Admin' | 'User';
 }
@@ -37,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(parsedUser);
           
           // סנכרון ראשוני: אם נמצא משתמש ב-LocalStorage, נעדכן גם את Redux
-          dispatch(setCredentials({ user: parsedUser }));
+          dispatch(setCredentials({ user: parsedUser, token }));
         }
       } catch (error) {
         console.error('Failed to parse user from localStorage', error);
@@ -58,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(user);
     
     // שליחת הנתונים ל-Redux
-    dispatch(setCredentials({ user }));
+    dispatch(setCredentials({ user, token }));
   };
 
   // 3. פונקציית התנתקות - מנקה LocalStorage, Context ו-Redux

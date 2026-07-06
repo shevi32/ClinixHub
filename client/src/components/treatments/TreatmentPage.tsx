@@ -13,7 +13,7 @@ export default function TreatmentPage() {
   const [error, setError] = useState("");
 
   const fetchTreatments = async () => {
-    const res = await fetch("http://localhost:3000/api/treatments");
+    const res = await fetch("http://localhost:5000/api/treatments");
     const data = await res.json();
     setTreatments(data);
   };
@@ -26,7 +26,7 @@ export default function TreatmentPage() {
     try {
       setError("");
 
-      const res = await fetch("http://localhost:3000/api/treatments", {
+      const res = await fetch("http://localhost:5000/api/treatments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ patientId, notes }),

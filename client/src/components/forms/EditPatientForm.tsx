@@ -40,7 +40,7 @@ export default function EditPatientForm({
       setError("");
 
       const res = await fetch(
-        `http://localhost:3000/api/patients/${patient._id}`,
+        `http://localhost:5000/api/patients/${patient._id}`,
         {
           method: "PUT",
           headers: {

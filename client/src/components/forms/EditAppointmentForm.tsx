@@ -42,7 +42,7 @@ export default function EditAppointmentForm({
       setError("");
 
       const res = await fetch(
-        `http://localhost:3000/api/appointments/${appointment._id}`,
+        `http://localhost:5000/api/appointments/${appointment._id}`,
         {
           method: "PUT",
           headers: {

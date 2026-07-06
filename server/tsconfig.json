@@ -47,13 +47,14 @@
   "compilerOptions": {
     "module": "nodenext",
     "target": "esnext",
-    "types": [],
+    "types": ["node"],
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
     // and npm install -D @types/node
 
     // Other Outputs
+
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -70,10 +71,14 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": false
+
     
-    // שינינו את זה ל-false כדי למנוע את השגיאה שראית קודם עם dotenv וה- imports
-    "verbatimModuleSyntax": false 
-  },
+  //   // שינינו את זה ל-false כדי למנוע את השגיאה שראית קודם עם dotenv וה- imports
+  //   "verbatimModuleSyntax": false 
+ },
   
   // תוסיף את הבלוק הזה פה למטה - הוא קריטי בשביל ts-node!
   "ts-node": {
