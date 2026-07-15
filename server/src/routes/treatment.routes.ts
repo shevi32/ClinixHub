@@ -4,8 +4,8 @@ import {
   deleteTreatment,
   getTreatments,
   getTreatmentById,
-  updateTreatment
-} from "../controllers/treatment.controller";
+  updateTreatment,
+} from "../controllers/treatment.controller.js";
 
 const router = express.Router();
 // CREATE

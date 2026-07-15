@@ -3,6 +3,18 @@ import type { ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 import { setCredentials, clearCredentials } from '../redux/authSlice.js';
 
+const safeParse = <T,>(value: string | null): T | null => {
+  if (!value || value === 'undefined' || value === 'null') {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+};
+
 interface User {
   id: string;
   name: string;
@@ -34,11 +46,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedUser = localStorage.getItem('user');
 
         if (token && storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          
-          // סנכרון ראשוני: אם נמצא משתמש ב-LocalStorage, נעדכן גם את Redux
-          dispatch(setCredentials({ user: parsedUser, token }));
+          const parsedUser = safeParse<User>(storedUser);
+          if (parsedUser) {
+            setUser(parsedUser);
+            dispatch(setCredentials({ user: parsedUser, token }));
+          } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
         }
       } catch (error) {
         console.error('Failed to parse user from localStorage', error);
