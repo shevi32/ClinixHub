@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Treatment } from "../models/treatment.model";
+import { Treatment } from "../models/treatment.model.js";
 
 export const createTreatment = async (req: Request, res: Response) => {
   try {
