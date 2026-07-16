@@ -26,9 +26,9 @@ export default function PatientsPage() {
       setError("");
 
       const response = await api.get('/patients');
-      const data = response.data;
 
-      setPatients(data);
+      // ה-API מחזיר { success, data, pagination } (Pagination) ולא מערך גולמי
+      setPatients(response.data.data ?? response.data);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -44,10 +44,7 @@ export default function PatientsPage() {
     try {
       setError("");
 
-      const response = await api.post('/patients', form);
-      const data = response.data;
-
-      if (response.status >= 400) throw new Error(data.message);
+      await api.post('/patients', form);
 
       setForm({ name: "", phone: "", email: "" });
       fetchPatients();

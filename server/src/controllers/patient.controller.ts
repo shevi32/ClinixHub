@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+﻿import { Request, Response, NextFunction } from "express";
 import { Patient } from "../models/patient.model.js";
 import { CustomError } from "../utils/customError.js";
 import {
@@ -34,7 +34,7 @@ export const createPatient = async (
       });
     }
 
-    // כתובת מייל כפולה (unique index) - שגיאת Mongo, לא Zod
+    // ╫¢╫¬╫ץ╫ס╫¬ ╫₧╫ש╫ש╫£ ╫¢╫ñ╫ץ╫£╫פ (unique index) - ╫⌐╫ע╫ש╫נ╫¬ Mongo, ╫£╫נ Zod
     if (err.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -46,7 +46,7 @@ export const createPatient = async (
   }
 };
 
-// GET all patients - עם חיפוש (שם/מייל) ו-Pagination
+// GET all patients - ╫ó╫¥ ╫ק╫ש╫ñ╫ץ╫⌐ (╫⌐╫¥/╫₧╫ש╫ש╫£) ╫ץ-Pagination
 export const getPatients = async (
   req: Request,
   res: Response,

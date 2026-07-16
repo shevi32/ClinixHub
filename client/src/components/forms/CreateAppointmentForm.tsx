@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+﻿import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -65,7 +65,7 @@ export default function CreateAppointmentForm() {
       }
 
       setSuccessMessage(
-        "Appointment created successfully ✔"
+        "Appointment created successfully Γ£פ"
       );
 
       reset();
@@ -86,8 +86,8 @@ export default function CreateAppointmentForm() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-joy-warm text-2xl text-white shadow-joy">
             <FaCalendarPlus />
           </div>
-          <h2 className="mt-3 text-2xl font-extrabold text-slate-800">קביעת תור חדש 🎉</h2>
-          <p className="mt-1 text-sm text-slate-500">מלאו את הפרטים ונקבע לך תור בקליק</p>
+          <h2 className="mt-3 text-2xl font-extrabold text-slate-800">╫º╫ס╫ש╫ó╫¬ ╫¬╫ץ╫¿ ╫ק╫ף╫⌐ ≡ƒמי</h2>
+          <p className="mt-1 text-sm text-slate-500">╫₧╫£╫נ╫ץ ╫נ╫¬ ╫פ╫ñ╫¿╫ר╫ש╫¥ ╫ץ╫á╫º╫ס╫ó ╫£╫ת ╫¬╫ץ╫¿ ╫ס╫º╫£╫ש╫º</p>
         </header>
 
         {successMessage && (
@@ -105,7 +105,7 @@ export default function CreateAppointmentForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="joy-card space-y-4 p-6">
           <div>
             <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-              <FaUser className="text-joy-sky" /> מזהה מטופל/ת
+              <FaUser className="text-joy-sky" /> ╫₧╫צ╫פ╫פ ╫₧╫ר╫ץ╫ñ╫£/╫¬
             </label>
             <input
               placeholder="Patient ID"
@@ -119,7 +119,7 @@ export default function CreateAppointmentForm() {
 
           <div>
             <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-              <FaUserMd className="text-joy-grape" /> מזהה מטפל/ת
+              <FaUserMd className="text-joy-grape" /> ╫₧╫צ╫פ╫פ ╫₧╫ר╫ñ╫£/╫¬
             </label>
             <input
               placeholder="Therapist ID"
@@ -133,7 +133,7 @@ export default function CreateAppointmentForm() {
 
           <div>
             <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-              <FaClock className="text-joy-sun" /> שעת התחלה
+              <FaClock className="text-joy-sun" /> ╫⌐╫ó╫¬ ╫פ╫¬╫ק╫£╫פ
             </label>
             <input
               type="datetime-local"
@@ -147,7 +147,7 @@ export default function CreateAppointmentForm() {
 
           <div>
             <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-              <FaClock className="text-joy-coral" /> שעת סיום
+              <FaClock className="text-joy-coral" /> ╫⌐╫ó╫¬ ╫í╫ש╫ץ╫¥
             </label>
             <input
               type="datetime-local"
@@ -160,7 +160,7 @@ export default function CreateAppointmentForm() {
           </div>
 
           <button type="submit" disabled={isSubmitting} className="joy-btn-primary w-full text-base">
-            {isSubmitting ? "יוצר תור..." : (<><FaCalendarPlus /> יצירת תור</>)}
+            {isSubmitting ? "╫ש╫ץ╫ª╫¿ ╫¬╫ץ╫¿..." : (<><FaCalendarPlus /> ╫ש╫ª╫ש╫¿╫¬ ╫¬╫ץ╫¿</>)}
           </button>
         </form>
       </div>

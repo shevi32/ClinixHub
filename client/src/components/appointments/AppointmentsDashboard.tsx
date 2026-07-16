@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import EditAppointmentForm from "../forms/EditAppointmentForm";
 import {
@@ -18,9 +18,9 @@ const statusBadgeClass: Record<string, string> = {
 };
 
 const statusLabel: Record<string, string> = {
-  scheduled: "מתוכנן",
-  completed: "הושלם",
-  cancelled: "בוטל",
+  scheduled: "╫₧╫¬╫ץ╫¢╫á╫ƒ",
+  completed: "╫פ╫ץ╫⌐╫£╫¥",
+  cancelled: "╫ס╫ץ╫ר╫£",
 };
 
 type Appointment = {
@@ -125,27 +125,27 @@ export default function AppointmentsDashboard() {
             <FaCalendarAlt />
           </div>
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-800">ניהול תורים</h2>
-            <p className="text-sm text-slate-500">כל התורים של הקליניקה, במקום אחד צבעוני 🗓️</p>
+            <h2 className="text-2xl font-extrabold text-slate-800">╫á╫ש╫פ╫ץ╫£ ╫¬╫ץ╫¿╫ש╫¥</h2>
+            <p className="text-sm text-slate-500">╫¢╫£ ╫פ╫¬╫ץ╫¿╫ש╫¥ ╫⌐╫£ ╫פ╫º╫£╫ש╫á╫ש╫º╫פ, ╫ס╫₧╫º╫ץ╫¥ ╫נ╫ק╫ף ╫ª╫ס╫ó╫ץ╫á╫ש ≡ƒקף∩╕ן</p>
           </div>
         </header>
 
         {/* FILTERS */}
         <div className="joy-card mb-6 flex flex-wrap items-end gap-3 p-5">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-500">סטטוס</label>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">╫í╫ר╫ר╫ץ╫í</label>
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="joy-input">
-              <option value="">הכול</option>
-              <option value="scheduled">מתוכנן</option>
-              <option value="completed">הושלם</option>
-              <option value="cancelled">בוטל</option>
+              <option value="">╫פ╫¢╫ץ╫£</option>
+              <option value="scheduled">╫₧╫¬╫ץ╫¢╫á╫ƒ</option>
+              <option value="completed">╫פ╫ץ╫⌐╫£╫¥</option>
+              <option value="cancelled">╫ס╫ץ╫ר╫£</option>
             </select>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-500">מטפל/ת</label>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">╫₧╫ר╫ñ╫£/╫¬</label>
             <input
-              placeholder="מזהה מטפל"
+              placeholder="╫₧╫צ╫פ╫פ ╫₧╫ר╫ñ╫£"
               value={therapistId}
               onChange={(e) => setTherapistId(e.target.value)}
               className="joy-input"
@@ -153,9 +153,9 @@ export default function AppointmentsDashboard() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-500">מטופל/ת</label>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">╫₧╫ר╫ץ╫ñ╫£/╫¬</label>
             <input
-              placeholder="מזהה מטופל"
+              placeholder="╫₧╫צ╫פ╫פ ╫₧╫ר╫ץ╫ñ╫£"
               value={patientId}
               onChange={(e) => setPatientId(e.target.value)}
               className="joy-input"
@@ -163,11 +163,11 @@ export default function AppointmentsDashboard() {
           </div>
 
           <button onClick={() => fetchAppointments(1)} className="joy-btn-primary">
-            <FaFilter /> סינון
+            <FaFilter /> ╫í╫ש╫á╫ץ╫ƒ
           </button>
         </div>
 
-        {loading && <p className="py-6 text-center text-slate-500">טוען תורים... 🔄</p>}
+        {loading && <p className="py-6 text-center text-slate-500">╫ר╫ץ╫ó╫ƒ ╫¬╫ץ╫¿╫ש╫¥... ≡ƒפה</p>}
         {error && <p className="py-4 text-center font-medium text-rose-600">{error}</p>}
 
         {/* TABLE */}
@@ -176,12 +176,12 @@ export default function AppointmentsDashboard() {
             <table className="w-full text-right text-sm text-slate-600">
               <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase text-slate-500">
                 <tr>
-                  <th className="px-5 py-3">מטופל</th>
-                  <th className="px-5 py-3">מטפל</th>
-                  <th className="px-5 py-3">התחלה</th>
-                  <th className="px-5 py-3">סיום</th>
-                  <th className="px-5 py-3">סטטוס</th>
-                  <th className="px-5 py-3">פעולות</th>
+                  <th className="px-5 py-3">╫₧╫ר╫ץ╫ñ╫£</th>
+                  <th className="px-5 py-3">╫₧╫ר╫ñ╫£</th>
+                  <th className="px-5 py-3">╫פ╫¬╫ק╫£╫פ</th>
+                  <th className="px-5 py-3">╫í╫ש╫ץ╫¥</th>
+                  <th className="px-5 py-3">╫í╫ר╫ר╫ץ╫í</th>
+                  <th className="px-5 py-3">╫ñ╫ó╫ץ╫£╫ץ╫¬</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -202,7 +202,7 @@ export default function AppointmentsDashboard() {
                           onClick={() => setEditingAppointment(a)}
                           className="joy-btn-soft px-3 py-1.5 text-xs"
                         >
-                          <FaEdit /> עריכה
+                          <FaEdit /> ╫ó╫¿╫ש╫¢╫פ
                         </button>
 
                         <button
@@ -210,7 +210,7 @@ export default function AppointmentsDashboard() {
                           onClick={() => cancelAppointment(a._id)}
                           className="joy-btn-danger px-3 py-1.5 text-xs"
                         >
-                          <FaBan /> ביטול
+                          <FaBan /> ╫ס╫ש╫ר╫ץ╫£
                         </button>
 
                         <button
@@ -218,7 +218,7 @@ export default function AppointmentsDashboard() {
                           onClick={() => deleteAppointment(a._id)}
                           className="joy-btn-ghost px-3 py-1.5 text-xs"
                         >
-                          <FaTrash /> מחיקה
+                          <FaTrash /> ╫₧╫ק╫ש╫º╫פ
                         </button>
 
                         <select
@@ -227,9 +227,9 @@ export default function AppointmentsDashboard() {
                           onChange={(e) => updateStatus(a._id, e.target.value)}
                           className="joy-input px-2 py-1.5 text-xs"
                         >
-                          <option value="scheduled">מתוכנן</option>
-                          <option value="completed">הושלם</option>
-                          <option value="cancelled">בוטל</option>
+                          <option value="scheduled">╫₧╫¬╫ץ╫¢╫á╫ƒ</option>
+                          <option value="completed">╫פ╫ץ╫⌐╫£╫¥</option>
+                          <option value="cancelled">╫ס╫ץ╫ר╫£</option>
                         </select>
                       </div>
                     </td>
@@ -247,11 +247,11 @@ export default function AppointmentsDashboard() {
             onClick={() => fetchAppointments(page - 1)}
             className="joy-btn-soft px-4 py-2 text-sm"
           >
-            <FaChevronRight /> הקודם
+            <FaChevronRight /> ╫פ╫º╫ץ╫ף╫¥
           </button>
 
           <span className="joy-badge bg-slate-100 text-slate-600">
-            עמוד {page} / {totalPages}
+            ╫ó╫₧╫ץ╫ף {page} / {totalPages}
           </span>
 
           <button
@@ -259,7 +259,7 @@ export default function AppointmentsDashboard() {
             onClick={() => fetchAppointments(page + 1)}
             className="joy-btn-soft px-4 py-2 text-sm"
           >
-            הבא <FaChevronLeft />
+            ╫פ╫ס╫נ <FaChevronLeft />
           </button>
         </div>
 

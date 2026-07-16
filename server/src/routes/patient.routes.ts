@@ -1,12 +1,11 @@
 import express from "express";
-
 import {
   createPatient,
   getPatients,
   getPatientById,
   updatePatient,
   deletePatient,
-} from "../controllers/patient.controller";
+} from "../controllers/patient.controller.js";
 import { verifyToken } from "../middlewares/authMiddleware.js";
 import { checkRole } from "../middlewares/roleMiddleware.js";
 import { ROLES } from "../constants/roles.js";
