@@ -1,11 +1,8 @@
 node_modules/
-server/node_modules/
-.env
-dist/
-build/
 client/node_modules/
 server/node_modules/
 .env
 .env.local
 dist/
+build/
 server-dev*.log

@@ -1,4 +1,4 @@
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 
 /**
  * חיבור Redis משותף - משמש גם ל-Cache (שעות פנויות) וגם ל-BullMQ (תור התראות).
@@ -23,7 +23,7 @@ redisConnection.on("connect", () => {
   console.log("Redis connected successfully 🚀 (cache + queue enabled)");
 });
 
-redisConnection.on("error", (err) => {
+redisConnection.on("error", (err: Error) => {
   if (isRedisAvailable) {
     console.error("Redis connection error:", err.message);
   }

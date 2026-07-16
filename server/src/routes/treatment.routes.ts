@@ -4,8 +4,8 @@ import {
   deleteTreatment,
   getTreatments,
   getTreatmentById,
-  updateTreatment
-} from "../controllers/treatment.controller";
+  updateTreatment,
+} from "../controllers/treatment.controller.js";
 import { verifyToken } from "../middlewares/authMiddleware.js";
 import { checkRole } from "../middlewares/roleMiddleware.js";
 import { ROLES } from "../constants/roles.js";
