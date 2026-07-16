@@ -1,20 +1,7 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
-    // File Layout
-    // "rootDir": "./src",
-    // "outDir": "./dist",
-
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
-    "target": "esnext",
-    "types": ["node"],    // For nodejs:
-    // "lib": ["esnext"],
-    // "types": ["node"],
-    // and npm install -D @types/node
-
-    // Other Outputs
+    "module": "NodeNext",    "target": "esnext",
+    "types": ["node"],
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -22,14 +9,6 @@
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-
-    // Style Options
-    // "noImplicitReturns": true,
-    // "noImplicitOverride": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
-    // "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
 
     // Recommended Options
     "strict": true,
@@ -39,5 +18,18 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": false
+
+    
+  //   // שינינו את זה ל-false כדי למנוע את השגיאה שראית קודם עם dotenv וה- imports
+  //   "verbatimModuleSyntax": false 
+ },
+  
+  // תוסיף את הבלוק הזה פה למטה - הוא קריטי בשביל ts-node!
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
   }
 }

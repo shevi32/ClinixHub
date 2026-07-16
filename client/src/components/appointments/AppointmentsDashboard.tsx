@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import api from "../../utils/api";
 import EditAppointmentForm from "../forms/EditAppointmentForm";
 
 type Appointment = {
@@ -39,13 +40,8 @@ export default function AppointmentsDashboard() {
       if (therapistId) params.append("therapistId", therapistId);
       if (patientId) params.append("patientId", patientId);
 
-      const res = await fetch(
-        `http://localhost:3000/api/appointments?${params.toString()}`
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message);
+      const response = await api.get('/appointments', { params });
+      const data = response.data;
 
       setAppointments(data.data);
       setTotalPages(data.pagination.pages);
@@ -65,9 +61,7 @@ export default function AppointmentsDashboard() {
     try {
       setActionLoadingId(id);
 
-      await fetch(`http://localhost:3000/api/appointments/${id}/cancel`, {
-        method: "PATCH",
-      });
+      await api.patch(`/appointments/${id}/cancel`);
 
       fetchAppointments(page);
     } finally {
@@ -79,9 +73,7 @@ export default function AppointmentsDashboard() {
     try {
       setActionLoadingId(id);
 
-      await fetch(`http://localhost:3000/api/appointments/${id}`, {
-        method: "DELETE",
-      });
+      await api.delete(`/appointments/${id}`);
 
       fetchAppointments(page);
     } finally {
@@ -93,11 +85,7 @@ export default function AppointmentsDashboard() {
     try {
       setActionLoadingId(id);
 
-      await fetch(`http://localhost:3000/api/appointments/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
+      await api.put(`/appointments/${id}`, { status });
 
       fetchAppointments(page);
     } finally {
@@ -157,12 +145,23 @@ export default function AppointmentsDashboard() {
 
           <button onClick={() => setEditingAppointment(a)}>Edit</button>
 
-          <button onClick={() => cancelAppointment(a._id)}>Cancel</button>
+          <button
+            disabled={actionLoadingId === a._id}
+            onClick={() => cancelAppointment(a._id)}
+          >
+            Cancel
+          </button>
 
-          <button onClick={() => deleteAppointment(a._id)}>Delete</button>
+          <button
+            disabled={actionLoadingId === a._id}
+            onClick={() => deleteAppointment(a._id)}
+          >
+            Delete
+          </button>
 
           <select
             value={a.status}
+            disabled={actionLoadingId === a._id}
             onChange={(e) => updateStatus(a._id, e.target.value)}
           >
             <option value="scheduled">scheduled</option>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import api from "../../utils/api";
 
 import CreatePatientForm from "../forms/CreatePatientForm";
 import EditPatientForm from "../forms/EditPatientForm";
@@ -45,15 +46,8 @@ export default function PatientsDashboard() {
         params.append("search", search);
       }
 
-      const res = await fetch(
-        `http://localhost:3000/api/patients?${params.toString()}`
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message);
-      }
+      const response = await api.get('/patients', { params });
+      const data = response.data;
 
       setPatients(data.data || data);
     } catch (err: any) {
@@ -71,12 +65,7 @@ export default function PatientsDashboard() {
     id: string
   ) => {
     try {
-      await fetch(
-        `http://localhost:3000/api/patients/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      await api.delete(`/patients/${id}`);
 
       fetchPatients();
     } catch (err: any) {
