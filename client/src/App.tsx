@@ -1,33 +1,38 @@
+import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
-import BookAppointment from "./pages/BookAppointment";
-import AppointmentHistory from "./pages/AppointmentHistory";
-import PatientDashboard from "./pages/PatientDashboard";
+// עמודים ציבוריים - נטענים באופן מיידי (Eager) כדי שהכניסה הראשונה לאתר תהיה מהירה
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import CreateAppointmentForm from "./components/forms/CreateAppointmentForm";
-import AppointmentsDashboard from "./components/appointments/AppointmentsDashboard";
-import PatientsPage from "./components/patients/PatientsPage";
-import TreatmentPage from "./components/treatments/TreatmentPage";
 
-// דפים זמניים
-const Home = () => (
-  <div style={{ padding: "20px" }} dir="rtl">
-    <h1>עמוד הבית</h1>
-  </div>
-);
+// כל שאר העמודים/הדשבורדים (כבדים יותר, כוללים טבלאות/טפסים/סטייט) נטענים בטעינה עצילה (Lazy Loading) -
+// כך שמטופל רגיל לא מוריד את קוד ניהול המטפל (וההפך), רק כשבאמת ניגשים לנתיב.
+const BookAppointment = lazy(() => import("./pages/BookAppointment"));
+const AppointmentHistory = lazy(() => import("./pages/AppointmentHistory"));
+const PatientDashboard = lazy(() => import("./pages/PatientDashboard"));
+const TherapistDashboard = lazy(() => import("./pages/TherapistDashboard"));
+const CreateAppointmentForm = lazy(() => import("./components/forms/CreateAppointmentForm"));
+const AppointmentsDashboard = lazy(() => import("./components/appointments/AppointmentsDashboard"));
+const PatientsPage = lazy(() => import("./components/patients/PatientsPage"));
+const TreatmentPage = lazy(() => import("./components/treatments/TreatmentPage"));
 
-const TherapistDashboard = () => (
-  <div style={{ padding: "20px" }} dir="rtl">
-    <h1>דאשבורד מטפל</h1>
+// מוצג לזמן הקצר שבו הדפדפן מוריד את ה-chunk של העמוד המבוקש
+const PageLoader = () => (
+  <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 via-white to-purple-50">
+    <div className="flex flex-col items-center gap-3">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-200 border-t-teal-500" />
+      <p className="text-sm font-medium text-slate-500">טוען...</p>
+    </div>
   </div>
 );
 
 export default function App() {
   return (
       <AuthProvider>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
 
           {/* ציבורי */}
@@ -114,6 +119,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
+        </Suspense>
     </AuthProvider>
   );
 }

@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import api from "../../utils/api";
 import { appointmentSchema } from "./appointmentSchema";
+import { FaEdit, FaUser, FaUserMd, FaClock, FaExclamationCircle, FaSave, FaTimes } from "react-icons/fa";
 
 type FormData = z.infer<typeof appointmentSchema>;
 
@@ -41,24 +43,18 @@ export default function EditAppointmentForm({
     try {
       setError("");
 
-      const res = await fetch(
-        `http://localhost:3000/api/appointments/${appointment._id}`,
+      const response = await api.put(
+        `/appointments/${appointment._id}`,
         {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...data,
-            startTime: new Date(data.startTime).toISOString(),
-            endTime: new Date(data.endTime).toISOString(),
-          }),
+          ...data,
+          startTime: new Date(data.startTime).toISOString(),
+          endTime: new Date(data.endTime).toISOString(),
         }
       );
 
-      const result = await res.json();
+      const result = response.data;
 
-      if (!res.ok) {
+      if (response.status >= 400) {
         throw new Error(result.message || "Update failed");
       }
 
@@ -70,89 +66,69 @@ export default function EditAppointmentForm({
   };
 
 return (
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      background: "rgba(0,0,0,0.5)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 999,
-    }}
-  >
-    <div
-      style={{
-        background: "white",
-        padding: 20,
-        borderRadius: 10,
-        width: 400,
-      }}
-    >
-      <h3>Edit Appointment</h3>
+  <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 p-4" dir="rtl">
+    <div className="joy-card w-full max-w-md animate-pop-in p-6 text-right">
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-sky-400 text-lg text-white shadow-pop">
+          <FaEdit />
+        </div>
+        <h3 className="text-xl font-bold text-slate-800">עריכת תור</h3>
+      </div>
 
       {error && (
-        <p style={{ color: "red" }}>
-          {error}
+        <p className="mb-4 flex items-center gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+          <FaExclamationCircle /> {error}
         </p>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <input
-          {...register("patientId")}
-          placeholder="Patient ID"
-        />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+        <div>
+          <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+            <FaUser /> מזהה מטופל/ת
+          </label>
+          <input {...register("patientId")} placeholder="Patient ID" className="joy-input" />
+          {errors.patientId?.message && (
+            <p className="mt-1 text-xs font-medium text-rose-500">{errors.patientId.message}</p>
+          )}
+        </div>
 
-        <p style={{ color: "red" }}>
-          {errors.patientId?.message}
-        </p>
+        <div>
+          <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+            <FaUserMd /> מזהה מטפל/ת
+          </label>
+          <input {...register("therapistId")} placeholder="Therapist ID" className="joy-input" />
+          {errors.therapistId?.message && (
+            <p className="mt-1 text-xs font-medium text-rose-500">{errors.therapistId.message}</p>
+          )}
+        </div>
 
-        <input
-          {...register("therapistId")}
-          placeholder="Therapist ID"
-        />
+        <div>
+          <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+            <FaClock /> שעת התחלה
+          </label>
+          <input type="datetime-local" {...register("startTime")} className="joy-input" />
+          {errors.startTime?.message && (
+            <p className="mt-1 text-xs font-medium text-rose-500">{errors.startTime.message}</p>
+          )}
+        </div>
 
-        <p style={{ color: "red" }}>
-          {errors.therapistId?.message}
-        </p>
+        <div>
+          <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+            <FaClock /> שעת סיום
+          </label>
+          <input type="datetime-local" {...register("endTime")} className="joy-input" />
+          {errors.endTime?.message && (
+            <p className="mt-1 text-xs font-medium text-rose-500">{errors.endTime.message}</p>
+          )}
+        </div>
 
-        <input
-          type="datetime-local"
-          {...register("startTime")}
-        />
-
-        <p style={{ color: "red" }}>
-          {errors.startTime?.message}
-        </p>
-
-        <input
-          type="datetime-local"
-          {...register("endTime")}
-        />
-
-        <p style={{ color: "red" }}>
-          {errors.endTime?.message}
-        </p>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            marginTop: 10,
-          }}
-        >
-          <button disabled={isSubmitting}>
-            Save
+        <div className="flex gap-3 pt-2">
+          <button disabled={isSubmitting} className="joy-btn-primary w-full text-sm">
+            <FaSave /> שמירה
           </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-          >
-            Cancel
+          <button type="button" onClick={onClose} className="joy-btn-ghost w-1/3 text-sm">
+            <FaTimes /> ביטול
           </button>
         </div>
       </form>

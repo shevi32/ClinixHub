@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import app from "./app.js";
+import { initRedis } from "./config/redis.js";
+import { startNotificationWorker } from "./queues/notification.worker.js";
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI =
@@ -19,7 +21,11 @@ async function connectDB() {
 const startServer = async () => {
   try {
     await connectDB();
-    
+
+    // Redis (Cache + Queue) הוא בונוס - אם הוא לא זמין, השרת ממשיך לרוץ כרגיל בלעדיו
+    await initRedis();
+    startNotificationWorker();
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
