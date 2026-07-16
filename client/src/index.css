@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  font-family: "Rubik", system-ui, sans-serif;
+}
+
+body {
+  background: #f4f8fb;
+}
+
+/* Playful scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #14b8a6, #38bdf8);
+  border-radius: 999px;
+}
+
+/* Reusable "joy" building blocks used across the app */
+@layer components {
+  .joy-card {
+    @apply bg-white rounded-3xl shadow-pop border border-slate-100 transition-transform duration-200;
+  }
+  .joy-card:hover {
+    @apply -translate-y-1 shadow-joy;
+  }
+
+  .joy-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 font-semibold text-white shadow-pop transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .joy-btn-primary {
+    @apply joy-btn bg-joy-gradient hover:brightness-110;
+  }
+  .joy-btn-warm {
+    @apply joy-btn bg-joy-warm hover:brightness-110;
+  }
+  .joy-btn-soft {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 font-semibold text-teal-700 bg-teal-50 border border-teal-100 hover:bg-teal-100 transition-all duration-200 active:scale-95;
+  }
+  .joy-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all duration-200 active:scale-95;
+  }
+  .joy-btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 font-semibold text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-100 transition-all duration-200 active:scale-95;
+  }
+
+  .joy-input {
+    @apply w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition-colors focus:border-teal-400 placeholder:text-slate-400;
+  }
+
+  .joy-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold;
+  }
+  .joy-badge-scheduled {
+    @apply joy-badge bg-sky-100 text-sky-700;
+  }
+  .joy-badge-completed {
+    @apply joy-badge bg-emerald-100 text-emerald-700;
+  }
+  .joy-badge-cancelled {
+    @apply joy-badge bg-rose-100 text-rose-600;
+  }
+  .joy-badge-pending {
+    @apply joy-badge bg-amber-100 text-amber-700;
+  }
+
+  .joy-blob {
+    @apply absolute rounded-blob blur-3xl opacity-40 pointer-events-none animate-blob;
+  }
+}

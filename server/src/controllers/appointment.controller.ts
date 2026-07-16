@@ -1,22 +1,44 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { Appointment } from "../models/appointment.model.js";
 import {
   createAppointmentSchema,
   updateAppointmentSchema,
 } from "../validations/appointment.validation.js";
 import { ZodError } from "zod";
+import { ROLES } from "../constants/roles.js";
+import {
+  getAvailableSlotsCached,
+  invalidateAvailableSlotsCache,
+} from "../services/availability.service.js";
+import { enqueueAppointmentNotification } from "../queues/notification.queue.js";
+
+/** מחזיר true אם המשתמש המחובר הוא מטפל (רואה הכול), false אם הוא מטופל רגיל */
+const isTherapist = (req: Request) =>
+  (req as any).user?.role === ROLES.THERAPIST;
+
+/** מזהה המשתמש המחובר, כפי שנשמר בטוקן ה-JWT */
+const currentUserId = (req: Request) => (req as any).user?.id;
 
 /* =========================
    CREATE APPOINTMENT
 ========================= */
 export const createAppointment = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     // validation
     const validatedData =
       createAppointmentSchema.parse(req.body);
+
+    // לעולם לא סומכים על patientId שהלקוח שולח בשביל מטופל - גוזרים אותו מהטוקן המאומת עצמו.
+    // כך גם אם ה-state בדפדפן "מבולבל" (למשל כמה טאבים עם משתמשים שונים), התור נקבע בוודאות
+    // למשתמש שבאמת מאומת כרגע, בלי 403 מבלבל ובלי אפשרות לקבוע תור בשם מישהו אחר.
+    // Admin (מטפל) הוא היחיד שמורשה לקבוע תור בשם מטופל אחר, ולכן שולח patientId מפורש.
+    const effectivePatientId = isTherapist(req)
+      ? validatedData.patientId
+      : currentUserId(req);
 
     // conflict check
     const conflict = await Appointment.findOne({
@@ -46,7 +68,7 @@ export const createAppointment = async (
 
     // clean data
   const cleanData = {
-  patientId: validatedData.patientId,
+  patientId: effectivePatientId,
   therapistId: validatedData.therapistId,
   startTime: validatedData.startTime,
   endTime: validatedData.endTime,
@@ -61,6 +83,21 @@ export const createAppointment = async (
     // create
     const appointment =
       await Appointment.create(cleanData);
+
+    // ה-Cache של השעות הפנויות ליום/מטפל הזה כבר לא מעודכן - מבטלים אותו
+    await invalidateAvailableSlotsCache(
+      appointment.therapistId,
+      appointment.startTime
+    );
+
+    // מכניסים משימה לתור ה-BullMQ לשליחת אישור למטופל (מתבצע אסינכרונית ברקע)
+    await enqueueAppointmentNotification({
+      type: "appointment-confirmation",
+      appointmentId: String(appointment._id),
+      patientId: appointment.patientId,
+      therapistId: appointment.therapistId,
+      startTime: appointment.startTime.toISOString(),
+    });
 
     return res.status(201).json({
       success: true,
@@ -84,11 +121,7 @@ export const createAppointment = async (
       });
     }
 
-    return res.status(500).json({
-      success: false,
-      message:
-        "Server error while creating appointment",
-    });
+    next(error);
   }
 };
 
@@ -97,7 +130,8 @@ export const createAppointment = async (
 ========================= */
 export const getAppointments = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     const {
@@ -147,15 +181,65 @@ export const getAppointments = async (
       },
     });
   } catch (error) {
-    console.error(
-      "Get appointments error:",
-      error
+    next(error);
+  }
+};
+
+/* =========================
+   GET AVAILABLE SLOTS (Redis Cache)
+   שעות פנויות למטפל ביום נתון - נטענות מ-Cache (Redis) כשאפשר, כדי שלוח השנה
+   יטען מהר במיוחד בלי לפגוע ב-DB בכל בקשה.
+========================= */
+export const getAvailableSlots = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { therapistId, date } = req.query;
+
+    if (!therapistId || !date) {
+      return res.status(400).json({
+        success: false,
+        message: "therapistId and date query params are required",
+      });
+    }
+
+    const { slots, fromCache } = await getAvailableSlotsCached(
+      String(therapistId),
+      String(date)
     );
 
-    return res.status(500).json({
-      success: false,
-      message: "Error fetching appointments",
+    return res.status(200).json({
+      success: true,
+      data: slots,
+      cached: fromCache,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAppointmentsByPatient = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // מטפל רואה את התורים של כל מטופל לפי ה-URL; מטופל רואה תמיד רק את התורים שלו עצמו -
+    // גוזרים את הזהות מהטוקן ולא מה-URL, כדי לא להיתקע על state ישן/לא מסונכרן בקליינט.
+    const patientId = isTherapist(req)
+      ? String(req.params.patientId)
+      : currentUserId(req);
+
+    const appointments = await Appointment.find({ patientId });
+
+    return res.status(200).json({
+      success: true,
+      data: appointments,
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -164,7 +248,8 @@ export const getAppointments = async (
 ========================= */
 export const getAppointmentById = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     const { id } = req.params;
@@ -179,20 +264,20 @@ export const getAppointmentById = async (
       });
     }
 
+    // מטופל יכול לצפות רק בתור שלו עצמו
+    if (!isTherapist(req) && appointment.patientId !== currentUserId(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only view your own appointment",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       data: appointment,
     });
   } catch (error) {
-    console.error(
-      "Get appointment error:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message: "Error fetching appointment",
-    });
+    next(error);
   }
 };
 
@@ -201,7 +286,8 @@ export const getAppointmentById = async (
 ========================= */
 export const updateAppointment = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     const { id } = req.params;
@@ -216,6 +302,19 @@ export const updateAppointment = async (
         success: false,
         message: "Appointment not found",
       });
+    }
+
+    // מטופל יכול לעדכן/לשנות רק את התור שלו עצמו - נבדק לפי הרשומה ב-DB (לא לפי קלט מהלקוח)
+    if (!isTherapist(req) && existingAppointment.patientId !== currentUserId(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only update your own appointment",
+      });
+    }
+
+    // מטופל לא רשאי "להעביר" תור למטופל אחר ע"י שינוי patientId בגוף הבקשה - מתעלמים מזה עבורו
+    if (!isTherapist(req)) {
+      delete validatedData.patientId;
     }
 
     // =========================
@@ -266,6 +365,12 @@ export const updateAppointment = async (
       { new: true }
     );
 
+    if (appointment) {
+      // מבטלים את ה-Cache גם ליום הישן וגם ליום החדש (במקרה שהתור הועבר ליום אחר)
+      await invalidateAvailableSlotsCache(existingAppointment.therapistId, existingAppointment.startTime);
+      await invalidateAvailableSlotsCache(appointment.therapistId, appointment.startTime);
+    }
+
     return res.status(200).json({
       success: true,
       data: appointment,
@@ -284,10 +389,7 @@ export const updateAppointment = async (
       });
     }
 
-    return res.status(500).json({
-      success: false,
-      message: "Error updating appointment",
-    });
+    next(error);
   }
 };
 /* =========================
@@ -295,7 +397,8 @@ export const updateAppointment = async (
 ========================= */
 export const deleteAppointment = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     const { id } = req.params;
@@ -312,22 +415,15 @@ export const deleteAppointment = async (
       });
     }
 
+    await invalidateAvailableSlotsCache(appointment.therapistId, appointment.startTime);
+
     return res.status(200).json({
       success: true,
       message:
         "Appointment deleted successfully",
     });
   } catch (error) {
-    console.error(
-      "Delete appointment error:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        "Error deleting appointment",
-    });
+    next(error);
   }
 };
 
@@ -336,7 +432,8 @@ export const deleteAppointment = async (
 ========================= */
 export const cancelAppointment = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     const { id } = req.params;
@@ -348,6 +445,14 @@ export const cancelAppointment = async (
       return res.status(404).json({
         success: false,
         message: "Appointment not found",
+      });
+    }
+
+    // מטופל יכול לבטל רק את התור שלו עצמו
+    if (!isTherapist(req) && appointment.patientId !== currentUserId(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only cancel your own appointment",
       });
     }
 
@@ -370,20 +475,23 @@ export const cancelAppointment = async (
 
     await appointment.save();
 
+    // השעה שהתפנתה חוזרת להיות פנויה - מבטלים את ה-Cache
+    await invalidateAvailableSlotsCache(appointment.therapistId, appointment.startTime);
+
+    // מכניסים משימה לתור לשליחת הודעת ביטול למטופל
+    await enqueueAppointmentNotification({
+      type: "appointment-cancelled",
+      appointmentId: String(appointment._id),
+      patientId: appointment.patientId,
+      therapistId: appointment.therapistId,
+      startTime: appointment.startTime.toISOString(),
+    });
+
     return res.status(200).json({
       success: true,
       data: appointment,
     });
   } catch (error) {
-    console.error(
-      "Cancel appointment error:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        "Error cancelling appointment",
-    });
+    next(error);
   }
 };

@@ -3,9 +3,9 @@
 // הגדרת המבנה של המשתמש בתוך ה-State
 interface User {
   id: string;
-  name: string;
   email: string;
   role: 'Admin' | 'User'; // תואם בדיוק ל-ProtectedRoute שלכן
+  name?: string;
 }
 
 interface AuthState {
@@ -17,10 +17,22 @@ interface AuthState {
 
 // קריאת הנתונים הקיימים מה-LocalStorage כדי שהמשתמש יישאר מחובר גם אחרי רענון
 const storedToken = localStorage.getItem('token');
-const storedUser = localStorage.getItem('user');
+const rawStoredUser = localStorage.getItem('user');
+
+// Safely parse stored user: handle cases where the value is the string "undefined" or invalid JSON
+let parsedStoredUser: User | null = null;
+if (rawStoredUser && rawStoredUser !== 'undefined' && rawStoredUser !== 'null') {
+  try {
+    parsedStoredUser = JSON.parse(rawStoredUser) as User;
+  } catch (err) {
+    console.warn('Invalid user in localStorage, clearing value:', err);
+    localStorage.removeItem('user');
+    parsedStoredUser = null;
+  }
+}
 
 const initialState: AuthState = {
-  user: storedUser ? JSON.parse(storedUser) : null,
+  user: parsedStoredUser,
   token: storedToken || null,
   loading: false,
   error: null,

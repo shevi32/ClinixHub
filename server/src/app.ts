@@ -20,6 +20,10 @@ app.use("/api/patients", patientRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/treatments", treatmentRoutes);
 
+app.use("/patients", patientRoutes);
+app.use("/appointments", appointmentRoutes);
+app.use("/treatments", treatmentRoutes);
+
 // Authentication (temporary Express routes for frontend during local development)
 app.use("/auth", authRoutes);
 

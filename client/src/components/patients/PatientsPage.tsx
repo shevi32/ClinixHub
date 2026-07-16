@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import api from "../../utils/api";
+import { FaUserFriends, FaUserPlus, FaPhone, FaEnvelope, FaUser } from "react-icons/fa";
 
 type Patient = {
   _id: string;
@@ -23,10 +25,8 @@ export default function PatientsPage() {
       setLoading(true);
       setError("");
 
-      const res = await fetch("http://localhost:3000/api/patients");
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message);
+      const response = await api.get('/patients');
+      const data = response.data;
 
       setPatients(data);
     } catch (err: any) {
@@ -44,15 +44,10 @@ export default function PatientsPage() {
     try {
       setError("");
 
-      const res = await fetch("http://localhost:3000/api/patients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const response = await api.post('/patients', form);
+      const data = response.data;
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message);
+      if (response.status >= 400) throw new Error(data.message);
 
       setForm({ name: "", phone: "", email: "" });
       fetchPatients();
@@ -62,44 +57,86 @@ export default function PatientsPage() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Patients</h2>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-teal-50 via-white to-purple-50 text-right" dir="rtl">
+      <div className="joy-blob -top-16 -left-16 h-64 w-64 bg-joy-grape" />
+      <div className="joy-blob bottom-0 -right-16 h-64 w-64 bg-joy-sun" style={{ animationDelay: "3s" }} />
 
-      {/* FORM */}
-      <div style={{ marginBottom: 20 }}>
-        <input
-          placeholder="Name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
+      <div className="relative z-10 mx-auto max-w-5xl p-6">
+        <header className="mb-6 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-400 to-fuchsia-400 text-xl text-white shadow-pop">
+            <FaUserFriends />
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold text-slate-800">ניהול מטופלים</h2>
+            <p className="text-sm text-slate-500">כל המטופלים שלך, במקום חם ונעים 🌸</p>
+          </div>
+        </header>
 
-        <input
-          placeholder="Phone"
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-        />
+        {/* FORM */}
+        <div className="joy-card mb-6 flex flex-wrap items-end gap-3 p-5">
+          <div>
+            <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+              <FaUser /> שם
+            </label>
+            <input
+              placeholder="שם המטופל/ת"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="joy-input"
+            />
+          </div>
 
-        <input
-          placeholder="Email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-        />
+          <div>
+            <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+              <FaPhone /> טלפון
+            </label>
+            <input
+              placeholder="050-0000000"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              className="joy-input"
+            />
+          </div>
 
-        <button onClick={createPatient}>Add Patient</button>
-      </div>
+          <div>
+            <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+              <FaEnvelope /> אימייל
+            </label>
+            <input
+              placeholder="email@example.com"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="joy-input"
+            />
+          </div>
 
-      {/* STATES */}
-      {loading && <p>Loading...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {/* LIST */}
-      {patients.map((p) => (
-        <div key={p._id} style={{ border: "1px solid #ddd", padding: 10, marginBottom: 5 }}>
-          <div>{p.name}</div>
-          <div>{p.phone}</div>
-          <div>{p.email}</div>
+          <button onClick={createPatient} className="joy-btn-warm">
+            <FaUserPlus /> הוספת מטופל/ת
+          </button>
         </div>
-      ))}
+
+        {/* STATES */}
+        {loading && <p className="py-6 text-center text-slate-500">טוען מטופלים... 🔄</p>}
+        {error && <p className="py-4 text-center font-medium text-rose-600">{error}</p>}
+
+        {/* LIST */}
+        {!loading && !error && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {patients.map((p) => (
+              <div key={p._id} className="joy-card flex items-center gap-3 p-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-400 to-sky-400 text-lg font-bold text-white">
+                  {p.name?.charAt(0) || "?"}
+                </div>
+                <div className="overflow-hidden">
+                  <p className="truncate font-bold text-slate-800">{p.name}</p>
+                  <p className="truncate text-sm text-slate-500">{p.phone}</p>
+                  <p className="truncate text-sm text-slate-400">{p.email}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

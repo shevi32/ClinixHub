@@ -3,6 +3,6 @@
  * שימוש בקבועים מונע טעויות הקלדה (Typo) ומקל על שינויים עתידיים
  */
 export const ROLES = {
-    THERAPIST: 'Therapist',
-    PATIENT: 'Patient'
+    THERAPIST: 'Admin',
+    PATIENT: 'User'
 };

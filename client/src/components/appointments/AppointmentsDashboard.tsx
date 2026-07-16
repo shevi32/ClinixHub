@@ -1,6 +1,27 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import EditAppointmentForm from "../forms/EditAppointmentForm";
+import {
+  FaCalendarAlt,
+  FaFilter,
+  FaEdit,
+  FaBan,
+  FaTrash,
+  FaChevronRight,
+  FaChevronLeft,
+} from "react-icons/fa";
+
+const statusBadgeClass: Record<string, string> = {
+  scheduled: "joy-badge-scheduled",
+  completed: "joy-badge-completed",
+  cancelled: "joy-badge-cancelled",
+};
+
+const statusLabel: Record<string, string> = {
+  scheduled: "מתוכנן",
+  completed: "הושלם",
+  cancelled: "בוטל",
+};
 
 type Appointment = {
   _id: string;
@@ -94,112 +115,163 @@ export default function AppointmentsDashboard() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Appointments Dashboard</h2>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-teal-50 via-white to-purple-50 text-right" dir="rtl">
+      <div className="joy-blob -top-16 -right-16 h-64 w-64 bg-joy-sky" />
+      <div className="joy-blob bottom-0 -left-16 h-64 w-64 bg-joy-grape" style={{ animationDelay: "2s" }} />
 
-      {/* FILTERS */}
-      <div>
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+      <div className="relative z-10 mx-auto max-w-6xl p-6">
+        <header className="mb-6 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-sky-400 text-xl text-white shadow-pop">
+            <FaCalendarAlt />
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold text-slate-800">ניהול תורים</h2>
+            <p className="text-sm text-slate-500">כל התורים של הקליניקה, במקום אחד צבעוני 🗓️</p>
+          </div>
+        </header>
 
-        <input
-          placeholder="Therapist"
-          value={therapistId}
-          onChange={(e) => setTherapistId(e.target.value)}
-        />
+        {/* FILTERS */}
+        <div className="joy-card mb-6 flex flex-wrap items-end gap-3 p-5">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">סטטוס</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="joy-input">
+              <option value="">הכול</option>
+              <option value="scheduled">מתוכנן</option>
+              <option value="completed">הושלם</option>
+              <option value="cancelled">בוטל</option>
+            </select>
+          </div>
 
-        <input
-          placeholder="Patient"
-          value={patientId}
-          onChange={(e) => setPatientId(e.target.value)}
-        />
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">מטפל/ת</label>
+            <input
+              placeholder="מזהה מטפל"
+              value={therapistId}
+              onChange={(e) => setTherapistId(e.target.value)}
+              className="joy-input"
+            />
+          </div>
 
-        <button onClick={() => fetchAppointments(1)}>Filter</button>
-      </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">מטופל/ת</label>
+            <input
+              placeholder="מזהה מטופל"
+              value={patientId}
+              onChange={(e) => setPatientId(e.target.value)}
+              className="joy-input"
+            />
+          </div>
 
-      {loading && <p>Loading...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {/* TABLE */}
-      {appointments.map((a) => (
-        <div key={a._id} style={{ border: "1px solid #ddd", margin: 5, padding: 10 }}>
-         <div>{a.patientId}</div>
-
-<div>{a.therapistId}</div>
-
-<div>
-  Start:
-  {new Date(a.startTime).toLocaleString()}
-</div>
-
-<div>
-  End:
-  {new Date(a.endTime).toLocaleString()}
-</div>
-
-<div>{a.status}</div>
-
-          <button onClick={() => setEditingAppointment(a)}>Edit</button>
-
-          <button
-            disabled={actionLoadingId === a._id}
-            onClick={() => cancelAppointment(a._id)}
-          >
-            Cancel
+          <button onClick={() => fetchAppointments(1)} className="joy-btn-primary">
+            <FaFilter /> סינון
           </button>
-
-          <button
-            disabled={actionLoadingId === a._id}
-            onClick={() => deleteAppointment(a._id)}
-          >
-            Delete
-          </button>
-
-          <select
-            value={a.status}
-            disabled={actionLoadingId === a._id}
-            onChange={(e) => updateStatus(a._id, e.target.value)}
-          >
-            <option value="scheduled">scheduled</option>
-            <option value="completed">completed</option>
-            <option value="cancelled">cancelled</option>
-          </select>
         </div>
-      ))}
 
-      {/* PAGINATION FIX */}
-      <div style={{ marginTop: 20 }}>
-        <button
-          disabled={page <= 1}
-          onClick={() => fetchAppointments(page - 1)}
-        >
-          Previous
-        </button>
+        {loading && <p className="py-6 text-center text-slate-500">טוען תורים... 🔄</p>}
+        {error && <p className="py-4 text-center font-medium text-rose-600">{error}</p>}
 
-        <span style={{ margin: "0 10px" }}>
-          Page {page} / {totalPages}
-        </span>
+        {/* TABLE */}
+        {!loading && !error && (
+          <div className="joy-card overflow-hidden">
+            <table className="w-full text-right text-sm text-slate-600">
+              <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-5 py-3">מטופל</th>
+                  <th className="px-5 py-3">מטפל</th>
+                  <th className="px-5 py-3">התחלה</th>
+                  <th className="px-5 py-3">סיום</th>
+                  <th className="px-5 py-3">סטטוס</th>
+                  <th className="px-5 py-3">פעולות</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {appointments.map((a) => (
+                  <tr key={a._id} className="transition-colors hover:bg-teal-50/40">
+                    <td className="px-5 py-4 font-semibold text-slate-800">{a.patientId}</td>
+                    <td className="px-5 py-4">{a.therapistId}</td>
+                    <td className="px-5 py-4">{new Date(a.startTime).toLocaleString("he-IL")}</td>
+                    <td className="px-5 py-4">{new Date(a.endTime).toLocaleString("he-IL")}</td>
+                    <td className="px-5 py-4">
+                      <span className={statusBadgeClass[a.status] || "joy-badge bg-slate-100 text-slate-600"}>
+                        {statusLabel[a.status] || a.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => setEditingAppointment(a)}
+                          className="joy-btn-soft px-3 py-1.5 text-xs"
+                        >
+                          <FaEdit /> עריכה
+                        </button>
 
-        <button
-          disabled={page >= totalPages}
-          onClick={() => fetchAppointments(page + 1)}
-        >
-          Next
-        </button>
+                        <button
+                          disabled={actionLoadingId === a._id}
+                          onClick={() => cancelAppointment(a._id)}
+                          className="joy-btn-danger px-3 py-1.5 text-xs"
+                        >
+                          <FaBan /> ביטול
+                        </button>
+
+                        <button
+                          disabled={actionLoadingId === a._id}
+                          onClick={() => deleteAppointment(a._id)}
+                          className="joy-btn-ghost px-3 py-1.5 text-xs"
+                        >
+                          <FaTrash /> מחיקה
+                        </button>
+
+                        <select
+                          value={a.status}
+                          disabled={actionLoadingId === a._id}
+                          onChange={(e) => updateStatus(a._id, e.target.value)}
+                          className="joy-input px-2 py-1.5 text-xs"
+                        >
+                          <option value="scheduled">מתוכנן</option>
+                          <option value="completed">הושלם</option>
+                          <option value="cancelled">בוטל</option>
+                        </select>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* PAGINATION */}
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <button
+            disabled={page <= 1}
+            onClick={() => fetchAppointments(page - 1)}
+            className="joy-btn-soft px-4 py-2 text-sm"
+          >
+            <FaChevronRight /> הקודם
+          </button>
+
+          <span className="joy-badge bg-slate-100 text-slate-600">
+            עמוד {page} / {totalPages}
+          </span>
+
+          <button
+            disabled={page >= totalPages}
+            onClick={() => fetchAppointments(page + 1)}
+            className="joy-btn-soft px-4 py-2 text-sm"
+          >
+            הבא <FaChevronLeft />
+          </button>
+        </div>
+
+        {/* EDIT MODAL */}
+        {editingAppointment && (
+          <EditAppointmentForm
+            appointment={editingAppointment}
+            onClose={() => setEditingAppointment(null)}
+            onUpdated={() => fetchAppointments(page)}
+          />
+        )}
       </div>
-
-      {/* EDIT MODAL */}
-      {editingAppointment && (
-        <EditAppointmentForm
-          appointment={editingAppointment}
-          onClose={() => setEditingAppointment(null)}
-          onUpdated={() => fetchAppointments(page)}
-        />
-      )}
     </div>
   );
 }

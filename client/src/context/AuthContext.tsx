@@ -2,7 +2,6 @@ import { createContext, useState, useEffect} from 'react';
 import type { ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 import { setCredentials, clearCredentials } from '../redux/authSlice.js';
-import api from '../utils/api.js';
 
 interface User {
   id: string;
@@ -31,12 +30,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initializeAuth = () => {
       try {
         const token = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
+        const rawStoredUser = localStorage.getItem('user');
 
-        if (token && storedUser) {
-          const parsedUser = JSON.parse(storedUser);
+        // Safely parse stored user, ignore if it's the string 'undefined' or invalid JSON
+        let parsedUser = null as any;
+        if (rawStoredUser && rawStoredUser !== 'undefined' && rawStoredUser !== 'null') {
+          try {
+            parsedUser = JSON.parse(rawStoredUser);
+          } catch (err) {
+            console.warn('Invalid user in localStorage, clearing value:', err);
+            localStorage.removeItem('user');
+            parsedUser = null;
+          }
+        }
+
+        if (token && parsedUser) {
           setUser(parsedUser);
-          
+
           // סנכרון ראשוני: אם נמצא משתמש ב-LocalStorage, נעדכן גם את Redux
           dispatch(setCredentials({ user: parsedUser, token }));
         }
