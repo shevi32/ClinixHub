@@ -1,11 +1,11 @@
- import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 // הגדרת המבנה של המשתמש בתוך ה-State
 interface User {
   id: string;
-  name: string;
   email: string;
   role: 'Admin' | 'User'; // תואם בדיוק ל-ProtectedRoute שלכן
+  name?: string;
 }
 
 interface AuthState {
@@ -15,60 +15,77 @@ interface AuthState {
   error: string | null;
 }
 
-// קריאת הנתונים הקיימים מה-LocalStorage כדי שהמשתמש יישאר מחובר גם אחרי רענון
+// קריאה מ-localStorage
 const storedToken = localStorage.getItem('token');
-const storedUser = localStorage.getItem('user');
+const rawStoredUser = localStorage.getItem('user');
 
+// Safely parse stored user: handle cases where the value is the string "undefined" or invalid JSON
+let parsedStoredUser: User | null = null;
+if (rawStoredUser && rawStoredUser !== 'undefined' && rawStoredUser !== 'null') {
+  try {
+    parsedStoredUser = JSON.parse(rawStoredUser) as User;
+  } catch (err) {
+    console.warn('Invalid user in localStorage, clearing value:', err);
+    localStorage.removeItem('user');
+    parsedStoredUser = null;
+  }
+}
+
+// מצב התחלתי
 const initialState: AuthState = {
-  user: storedUser ? JSON.parse(storedUser) : null,
+  user: parsedStoredUser,
   token: storedToken || null,
   loading: false,
   error: null,
 };
 
+// slice
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // 1. שמירת פרטי המשתמש והטוקן בעת התחברות מושלמת
+    // התחברות
     setCredentials: (
       state,
       action: PayloadAction<{ user: User; token: string }>
     ) => {
       const { user, token } = action.payload;
+
       state.user = user;
       state.token = token;
       state.error = null;
-      
-      // שמירה פיזית בדפדפן
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
     },
-    
-    // 2. התנתקות ומחיקת המידע מה-State ומהדפדפן
+
+    // התנתקות
     clearCredentials: (state) => {
       state.user = null;
       state.token = null;
       state.error = null;
-      
-      // מחיקה מהדפדפן
+
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     },
-    
-    // 3. עדכון שגיאות זמניות במידה ויש
+
+    // שגיאות
     setAuthError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
-    
-    // 4. שינוי מצב טעינה במידת הצורך
+
+    // loading
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     }
   },
 });
 
-// ייצוא מפורש של כל הפעולות ש-AuthContext.tsx ושאר האפליקציה מחפשים
-export const { setCredentials, clearCredentials, setAuthError, setLoading } = authSlice.actions;
+export const {
+  setCredentials,
+  clearCredentials,
+  setAuthError,
+  setLoading
+} = authSlice.actions;
 
 export default authSlice.reducer;

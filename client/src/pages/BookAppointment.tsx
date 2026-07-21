@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { createAppointment, resetStatus } from '../redux/appointmentSlice';
+import { FaCalendarPlus, FaUserMd, FaClock, FaStickyNote, FaExclamationCircle } from 'react-icons/fa';
 
 const BookAppointment = () => {
   const dispatch = useDispatch<any>();
@@ -58,67 +59,86 @@ const BookAppointment = () => {
   }, [success, dispatch, navigate]);
 
   return (
-    <div className="p-6 max-w-lg mx-auto min-h-screen bg-slate-50 text-right" dir="rtl">
-      <header className="mb-6 pb-4 border-b border-slate-200">
-        <h1 className="text-2xl font-bold text-slate-800">קביעת תור חדש</h1>
-      </header>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-teal-50 via-white to-purple-50 text-right" dir="rtl">
+      <div className="joy-blob -top-16 -right-16 h-64 w-64 bg-joy-coral" />
+      <div className="joy-blob bottom-0 -left-16 h-64 w-64 bg-joy-teal" style={{ animationDelay: '2s' }} />
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">בחר מטפל/ת *</label>
-          <select 
-            value={therapistId} 
-            onChange={(e) => setTherapistId(e.target.value)}
-            className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
-            required
-          >
-            <option value="">-- בחר מרשימה --</option>
-            <option value="therapist_1">ד"ר ישראלי ישראל</option>
-            <option value="therapist_2">פרופ' כהן שרה</option>
-          </select>
-        </div>
+      <div className="relative z-10 mx-auto max-w-lg p-6">
+        <header className="mb-6 pb-2 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-joy-warm text-2xl text-white shadow-joy">
+            <FaCalendarPlus />
+          </div>
+          <h1 className="mt-3 text-2xl font-extrabold text-slate-800">קביעת תור חדש 🎉</h1>
+          <p className="mt-1 text-sm text-slate-500">כמה פרטים קטנים ואתם בפנים!</p>
+        </header>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">תאריך ושעת התחלה *</label>
-          <input 
-            type="datetime-local" 
-            value={startTime}
-            min={getMinDateTime()} 
-            onChange={(e) => setStartTime(e.target.value)}
-            className="w-full p-2 border border-slate-300 rounded-lg text-sm text-right"
-            required
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="joy-card space-y-4 p-6">
+          <div>
+            <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
+              <FaUserMd className="text-joy-grape" /> בחר מטפל/ת *
+            </label>
+            <select
+              value={therapistId}
+              onChange={(e) => setTherapistId(e.target.value)}
+              className="joy-input"
+              required
+            >
+              <option value="">-- בחר מרשימה --</option>
+              <option value="therapist_1">ד"ר ישראלי ישראל</option>
+              <option value="therapist_2">פרופ' כהן שרה</option>
+            </select>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">הערות לטיפול (אופציונלי)</label>
-          <textarea 
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="סיבת הפנייה, רקע קצר וכו'..."
-            className="w-full p-2 border border-slate-300 rounded-lg text-sm text-right h-20 resize-none"
-          />
-        </div>
+          <div>
+            <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
+              <FaClock className="text-joy-sky" /> תאריך ושעת התחלה *
+            </label>
+            <input
+              type="datetime-local"
+              value={startTime}
+              min={getMinDateTime()}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="joy-input"
+              required
+            />
+          </div>
 
-        {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
+          <div>
+            <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
+              <FaStickyNote className="text-joy-sun" /> הערות לטיפול (אופציונלי)
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="סיבת הפנייה, רקע קצר וכו'..."
+              className="joy-input h-20 resize-none"
+            />
+          </div>
 
-        <div className="pt-2 flex gap-3">
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium py-2 px-4 rounded-lg text-sm"
-          >
-            {loading ? 'קובע תור...' : 'אישור וקביעת תור'}
-          </button>
-          <button 
-            type="button"
-            onClick={() => navigate('/patient-dashboard')}
-            className="w-1/3 bg-slate-200 text-slate-700 py-2 px-4 rounded-lg text-sm"
-          >
-            ביטול
-          </button>
-        </div>
-      </form>
+          {error && (
+            <p className="flex items-center gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+              <FaExclamationCircle /> {error}
+            </p>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="joy-btn-primary w-full text-sm"
+            >
+              {loading ? 'קובע תור...' : 'אישור וקביעת תור 🎊'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/patient-dashboard')}
+              className="joy-btn-ghost w-1/3 text-sm"
+            >
+              ביטול
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

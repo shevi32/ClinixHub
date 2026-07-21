@@ -23,16 +23,14 @@ interface AppointmentState {
 }
 
 // 1. Thunk: משיכת כל התורים של המטופל המחובר מהשרת
+// שימוש בנתיב הייעודי /appointments/patient/:patientId (ולא ב-GET /appointments הכללי,
+// שחסום ל-403 עבור מטופלים כי הוא מיועד ללוח הזמנים המלא של המטפל בלבד).
 export const fetchAppointments = createAsyncThunk(
   'appointments/fetchAll',
   async (patientId: string, thunkAPI) => {
     try {
-      // תיקון: שימוש פיזי ב-patientId שנשלח כפרמטר כדי שהשרת ידע את מי למשוך
-      // אם השרת מצפה לכתובת עם סימן שאלה: `/appointments?patientId=${patientId}`
-      // אם הוא מצפה לכתובת ישירה: `/appointments/patient/${patientId}`
-      const response = await api.get(`/appointments/patient/${patientId}`); 
-      
-      // הבטחה שאנחנו מחזירים את המערך עצמו (בין אם הוא עטוף ב-data או מגיע ישיר)
+      const response = await api.get(`/appointments/patient/${patientId}`);
+
       return response.data.data || response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || 'שגיאה במשיכת תורים');

@@ -1,35 +1,19 @@
-// import { FastifyReply, FastifyRequest } from 'fastify';
-
-// /**
-//  * Middleware לבדיקת הרשאות לפי תפקיד
-//  * @param requiredRole - התפקיד הנדרש לגישה לנתיב (למשל 'Admin')
-//  */
-//  export const checkRole = (requiredRole: 'Admin' | 'User') => {
-//     return async (req: FastifyRequest, reply: FastifyReply) => {
-//         // משיכת פרטי המשתמש שהוזרקו ב-verifyToken
-//         const user = (req as any).user;
-
-//         // בדיקה האם המשתמש קיים והאם התפקיד שלו תואם לדרישה
-//         if (!user || user.role !== requiredRole) {
-//             return reply.status(403).send({ error: "Forbidden: Insufficient permissions" });
-//         }
-//     };
-// };
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { ROLES } from '../constants/roles.js'; // ייבוא התפקידים מהקובץ החדש
+import { Request, Response, NextFunction } from 'express';
 
 /**
  * Middleware לבדיקת הרשאות לפי תפקיד
  * מוודא שלמשתמש המחובר יש את התפקיד הנדרש
  */
-export const checkRole = (requiredRole: string) => {
-    return async (req: FastifyRequest, reply: FastifyReply) => {
-        // משיכת פרטי המשתמש שהוזרקו ב-verifyToken
-        const user = (req as any).user;
+export const checkRole = (requiredRoles: string | string[]) => {
+  const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
 
-        // בדיקה האם המשתמש קיים והאם התפקיד שלו תואם לדרישה
-        if (!user || user.role !== requiredRole) {
-            return reply.status(403).send({ error: "Forbidden: Insufficient permissions" });
-        }
-    };
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as any).user;
+
+    if (!user || !roles.includes(user.role)) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    }
+
+    next();
+  };
 };
