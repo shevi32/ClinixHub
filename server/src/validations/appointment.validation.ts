@@ -1,10 +1,21 @@
 import { z } from "zod";
+import mongoose from "mongoose";
 
 // base schema
 const baseAppointmentSchema = z.object({
-  patientId: z.string().min(1, "patientId is required"),
+  patientId: z
+    .string()
+    .optional()
+    .refine((v) => v === undefined || mongoose.isValidObjectId(v), {
+      message: "Invalid patientId format",
+    }),
 
-  therapistId: z.string().min(1, "therapistId is required"),
+  therapistId: z
+    .string()
+    .min(1, "therapistId is required")
+    .refine((v) => mongoose.isValidObjectId(v), {
+      message: "Invalid therapistId format",
+    }),
 
   startTime: z.string().refine(
     (date) => !isNaN(Date.parse(date)),

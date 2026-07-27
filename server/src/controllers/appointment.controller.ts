@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
+import mongoose from "mongoose";
 import { Appointment } from "../models/appointment.model.js";
+import User from "../models/User.js";
 import {
   createAppointmentSchema,
   updateAppointmentSchema,
@@ -19,6 +21,36 @@ const isTherapist = (req: Request) =>
 /** מזהה המשתמש המחובר, כפי שנשמר בטוקן ה-JWT */
 const currentUserId = (req: Request) => (req as any).user?.id;
 
+/** שדות שמטופל רשאי לעדכן בתור קיים - Whitelist מפורש (deny-by-default) */
+const PATIENT_ALLOWED_UPDATE_FIELDS = ["startTime", "endTime", "notes"] as const;
+
+/** שדות שמטפל (Admin) רשאי לעדכן בתור קיים */
+const THERAPIST_ALLOWED_UPDATE_FIELDS = [
+  "patientId",
+  "therapistId",
+  "startTime",
+  "endTime",
+  "notes",
+  "status",
+] as const;
+
+/**
+ * מחזיר object חדש שמכיל רק את השדות המותרים מתוך data (Whitelist).
+ * לא נוגע ב-data המקורי ולא משתמש ב-delete - deny-by-default לכל שדה שלא ברשימה.
+ */
+const pickAllowedFields = <T extends Record<string, any>>(
+  data: T,
+  allowedFields: readonly string[]
+): Partial<T> => {
+  const result: Partial<T> = {};
+  for (const key of allowedFields) {
+    if (key in data) {
+      (result as any)[key] = (data as any)[key];
+    }
+  }
+  return result;
+};
+
 /* =========================
    CREATE APPOINTMENT
 ========================= */
@@ -32,23 +64,58 @@ export const createAppointment = async (
     const validatedData =
       createAppointmentSchema.parse(req.body);
 
-    // לעולם לא סומכים על patientId שהלקוח שולח בשביל מטופל - גוזרים אותו מהטוקן המאומת עצמו.
-    // כך גם אם ה-state בדפדפן "מבולבל" (למשל כמה טאבים עם משתמשים שונים), התור נקבע בוודאות
-    // למשתמש שבאמת מאומת כרגע, בלי 403 מבלבל ובלי אפשרות לקבוע תור בשם מישהו אחר.
-    // Admin (מטפל) הוא היחיד שמורשה לקבוע תור בשם מטופל אחר, ולכן שולח patientId מפורש.
-    const effectivePatientId = isTherapist(req)
-      ? validatedData.patientId
-      : currentUserId(req);
+    // Determine patientId: patient requests derive from JWT, therapists must provide it.
+    let effectivePatientId = currentUserId(req);
+    if (isTherapist(req)) {
+      if (!validatedData.patientId) {
+        return res.status(400).json({
+          success: false,
+          message: "patientId is required when creating appointment as therapist",
+        });
+      }
+      if (!mongoose.isValidObjectId(validatedData.patientId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid patientId format",
+        });
+      }
+      const patientUser = await User.findById(validatedData.patientId);
+      if (!patientUser) {
+        return res.status(404).json({
+          success: false,
+          message: "Patient not found",
+        });
+      }
+      effectivePatientId = validatedData.patientId;
+    }
 
-    // conflict check
+    if (!mongoose.isValidObjectId(validatedData.therapistId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid therapistId format",
+      });
+    }
+    const therapistUser = await User.findById(validatedData.therapistId);
+    if (!therapistUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Therapist not found",
+      });
+    }
+
+    // conflict check - חסימת חפיפה גם לפי מטפל וגם לפי מטופל; תורים שבוטלו לא נחשבים תפוסים
     const conflict = await Appointment.findOne({
-      therapistId: validatedData.therapistId,
+      status: { $ne: "cancelled" },
       startTime: {
         $lt: validatedData.endTime,
       },
       endTime: {
         $gt: validatedData.startTime,
       },
+      $or: [
+        { therapistId: validatedData.therapistId },
+        { patientId: effectivePatientId },
+      ],
     });
 
     if (conflict) {
@@ -134,16 +201,15 @@ export const getAppointments = async (
   next: NextFunction
 ) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      status,
-      patientId,
-      therapistId,
-    } = req.query;
+    const { status, patientId, therapistId } = req.query;
 
-    const skip =
-      (Number(page) - 1) * Number(limit);
+    // Pagination מוגן: page >= 1, limit בין 1 ל-100, ערכים לא-מספריים מקבלים ברירת מחדל
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10) || 1);
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(String(req.query.limit ?? "10"), 10) || 10)
+    );
+    const skip = (page - 1) * limit;
 
     const filter: any = {};
 
@@ -162,7 +228,7 @@ export const getAppointments = async (
     const appointments =
       await Appointment.find(filter)
         .skip(skip)
-        .limit(Number(limit));
+        .limit(limit);
 
     const total =
       await Appointment.countDocuments(
@@ -174,10 +240,8 @@ export const getAppointments = async (
       data: appointments,
       pagination: {
         total,
-        page: Number(page),
-        pages: Math.ceil(
-          total / Number(limit)
-        ),
+        page,
+        pages: Math.ceil(total / limit),
       },
     });
   } catch (error) {
@@ -312,33 +376,85 @@ export const updateAppointment = async (
       });
     }
 
-    // מטופל לא רשאי "להעביר" תור למטופל אחר ע"י שינוי patientId בגוף הבקשה - מתעלמים מזה עבורו
-    if (!isTherapist(req)) {
-      delete validatedData.patientId;
-    }
+    // Whitelist לפי תפקיד: מטופל רשאי לעדכן רק startTime/endTime/notes (לא patientId/therapistId/status).
+    // safeUpdateData הוא object חדש עם רק השדות המותרים - אין שימוש ב-delete על validatedData.
+    const allowedFields = isTherapist(req)
+      ? THERAPIST_ALLOWED_UPDATE_FIELDS
+      : PATIENT_ALLOWED_UPDATE_FIELDS;
+    const safeUpdateData = pickAllowedFields(validatedData, allowedFields);
 
     // =========================
     // חשוב: חישוב ערכים סופיים (עם Date תקין)
     // =========================
-    const updatedStartTime = validatedData.startTime
-      ? new Date(validatedData.startTime)
+    const updatedStartTime = safeUpdateData.startTime
+      ? new Date(safeUpdateData.startTime)
       : existingAppointment.startTime;
 
-    const updatedEndTime = validatedData.endTime
-      ? new Date(validatedData.endTime)
+    const updatedEndTime = safeUpdateData.endTime
+      ? new Date(safeUpdateData.endTime)
       : existingAppointment.endTime;
 
     const updatedTherapistId =
-      validatedData.therapistId ?? existingAppointment.therapistId;
+      safeUpdateData.therapistId ?? existingAppointment.therapistId;
+
+    const updatedPatientId =
+      safeUpdateData.patientId ?? existingAppointment.patientId;
+
+    if (updatedEndTime <= updatedStartTime) {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment validation failed",
+        errors: [
+          {
+            path: ["endTime"],
+            message: "endTime must be after startTime",
+          },
+        ],
+      });
+    }
+
+    if (!mongoose.isValidObjectId(updatedTherapistId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid therapistId format",
+      });
+    }
+
+    if (!mongoose.isValidObjectId(updatedPatientId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid patientId format",
+      });
+    }
+
+    const therapistUser = await User.findById(updatedTherapistId);
+    if (!therapistUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Therapist not found",
+      });
+    }
+
+    const patientUser = await User.findById(updatedPatientId);
+    if (!patientUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Patient not found",
+      });
+    }
 
     // =========================
-    // CONFLICT CHECK (חובה)
+    // CONFLICT CHECK (חובה) - גם לפי מטפל וגם לפי מטופל; תורים שבוטלו לא נחשבים תפוסים
     // =========================
     const conflict = await Appointment.findOne({
       _id: { $ne: id },
-      therapistId: updatedTherapistId,
+      status: { $ne: "cancelled" },
       startTime: { $lt: updatedEndTime },
       endTime: { $gt: updatedStartTime },
+      $or: [
+        { therapistId: updatedTherapistId },
+        { patientId: updatedPatientId },
+      ],
     });
 
     if (conflict) {
@@ -349,17 +465,17 @@ export const updateAppointment = async (
     }
 
     // =========================
-    // UPDATE
+    // UPDATE - רק safeUpdateData מגיע ל-DB, לעולם לא validatedData הגולמי
     // =========================
     const appointment = await Appointment.findByIdAndUpdate(
       id,
       {
-        ...validatedData,
-        ...(validatedData.startTime && {
-          startTime: new Date(validatedData.startTime),
+        ...safeUpdateData,
+        ...(safeUpdateData.startTime && {
+          startTime: new Date(safeUpdateData.startTime),
         }),
-        ...(validatedData.endTime && {
-          endTime: new Date(validatedData.endTime),
+        ...(safeUpdateData.endTime && {
+          endTime: new Date(safeUpdateData.endTime),
         }),
       },
       { new: true }
@@ -403,10 +519,7 @@ export const deleteAppointment = async (
   try {
     const { id } = req.params;
 
-    const appointment =
-      await Appointment.findByIdAndDelete(
-        id
-      );
+    const appointment = await Appointment.findById(id);
 
     if (!appointment) {
       return res.status(404).json({
@@ -414,6 +527,16 @@ export const deleteAppointment = async (
         message: "Appointment not found",
       });
     }
+
+    // בדיקת הרשאה בתוך ה-controller עצמו (הגנת-עומק, לא רק ברמת ה-route)
+    if (!isTherapist(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Only a therapist can delete an appointment",
+      });
+    }
+
+    await appointment.deleteOne();
 
     await invalidateAvailableSlotsCache(appointment.therapistId, appointment.startTime);
 
