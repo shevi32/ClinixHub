@@ -1,11 +1,10 @@
 // המודל מגדיר את מבנה המשתמש במסד הנתונים
 // כאן נגדיר אילו שדות חובה יש למשתמש (email, password)
 
-export interface User {
-    id?: string;
+export interface User extends mongoose.Document {
     email: string;
     passwordHash: string;
-    role: 'Admin' | 'User'; 
+    role: 'Admin' | 'User';
 }
 
 // בפרויקט אמיתי כאן תהיה גם הגדרה לספריה כמו Mongoose או Prisma
@@ -14,10 +13,10 @@ export interface User {
 //כשיהיה חיבור לDB למחוק את הקוד למעלה ולהשאיר אותו
 import mongoose from 'mongoose';
 
-const userSchema = new mongoose.Schema({
-    email: { type: String, required: true, unique: true },
+const userSchema = new mongoose.Schema<User>({
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['Admin', 'User'], default: 'User' }
 });
 
-export const User = mongoose.model('User', userSchema);
+export const User = mongoose.model<User>('User', userSchema);

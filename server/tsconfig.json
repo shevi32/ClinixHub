@@ -27,5 +27,9 @@
   "ts-node": {
     "esm": true,
     "experimentalSpecifierResolution": "node"
-  }
+  },
+  "exclude": [
+    "src/controllers/authController.ts",
+    "src/routes/authRoutes.ts"
+  ]
 }

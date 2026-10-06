@@ -1,62 +1,110 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { createAppointment, resetStatus } from '../redux/appointmentSlice';
+import api from '../utils/api';
 import { FaCalendarPlus, FaUserMd, FaClock, FaStickyNote, FaExclamationCircle } from 'react-icons/fa';
 
+type AvailableSlot = {
+  startTime: string;
+  endTime: string;
+};
+
 const BookAppointment = () => {
-  const dispatch = useDispatch<any>();
   const navigate = useNavigate();
-  
-  // שליפת נתוני התור מה-Store
-  const appointmentData = useSelector((state: any) => state.appointment || state.appointments || {});
-  const loading = appointmentData.loading;
-  const error = appointmentData.error;
-  const success = appointmentData.success;
-  
   // שליפת המשתמש המחובר
   const user = useSelector((state: any) => state.auth?.user || state.auth?.patient);
   
   const [therapistId, setTherapistId] = useState('');
-  const [startTime, setStartTime] = useState('');
+  const [date, setDate] = useState('');
+  const [slots, setSlots] = useState<AvailableSlot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState('');
+  const [bookingError, setBookingError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [slotsRefresh, setSlotsRefresh] = useState(0);
   const [notes, setNotes] = useState('');
 
-  const getMinDateTime = () => {
+  const getMinDate = () => {
     const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const userId = user?.id || user?._id;
-    if (!therapistId || !startTime || !userId) return;
-
-    const start = new Date(startTime);
-    
-    if (start <= new Date()) {
-      alert("יש לבחור תאריך ושעה עתידיים בלבד");
-      return;
-    }
-
-    const end = new Date(start.getTime() + 60 * 60 * 1000); 
-
-    dispatch(createAppointment({ 
-      therapistId, 
-      patientId: userId,
-      startTime: start.toISOString(), 
-      endTime: end.toISOString(),
-      type: "ייעוץ",
-      notes
-    }));
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+      .toISOString()
+      .slice(0, 10);
   };
 
   useEffect(() => {
-    if (success) {
-      dispatch(resetStatus());
-      navigate('/patient-dashboard');
+    if (!therapistId || !date) {
+      setSlots([]);
+      setSlotsLoading(false);
+      setSlotsError('');
+      return;
     }
-  }, [success, dispatch, navigate]);
+
+    let isCurrentRequest = true;
+    setSlotsLoading(true);
+    setSlotsError('');
+
+    api.get('/appointments/available-slots', {
+      params: { therapistId, date },
+    })
+      .then((response) => {
+        if (isCurrentRequest) {
+          setSlots(response.data.data);
+        }
+      })
+      .catch((requestError: any) => {
+        if (isCurrentRequest) {
+          setSlots([]);
+          setSlotsError(
+            requestError.response?.data?.message || 'לא ניתן לטעון שעות פנויות.'
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrentRequest) {
+          setSlotsLoading(false);
+        }
+      });
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [therapistId, date, slotsRefresh]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const userId = user?.id || user?._id;
+    if (!therapistId || !date || !selectedSlot || !userId || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setBookingError('');
+
+    try {
+      await api.post('/appointments', {
+        therapistId,
+        patientId: userId,
+        startTime: selectedSlot.startTime,
+        endTime: selectedSlot.endTime,
+        notes,
+      });
+      navigate('/patient-dashboard');
+    } catch (requestError: any) {
+      if (requestError.response?.status === 409) {
+        setBookingError('השעה נתפסה כעת. טענו מחדש את השעות ובחרו מועד אחר.');
+        setSelectedSlot(null);
+        setSlotsRefresh((current) => current + 1);
+      } else {
+        setBookingError(
+          requestError.response?.data?.message || 'לא ניתן לקבוע את התור כעת.'
+        );
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formatSlotTime = (time: string) =>
+    new Date(time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-teal-50 via-white to-purple-50 text-right" dir="rtl">
@@ -79,7 +127,11 @@ const BookAppointment = () => {
             </label>
             <select
               value={therapistId}
-              onChange={(e) => setTherapistId(e.target.value)}
+              onChange={(e) => {
+                setTherapistId(e.target.value);
+                setSelectedSlot(null);
+                setBookingError('');
+              }}
               className="joy-input"
               required
             >
@@ -91,17 +143,60 @@ const BookAppointment = () => {
 
           <div>
             <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-              <FaClock className="text-joy-sky" /> תאריך ושעת התחלה *
+              <FaClock className="text-joy-sky" /> תאריך *
             </label>
             <input
-              type="datetime-local"
-              value={startTime}
-              min={getMinDateTime()}
-              onChange={(e) => setStartTime(e.target.value)}
+              type="date"
+              value={date}
+              min={getMinDate()}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setSelectedSlot(null);
+                setBookingError('');
+              }}
               className="joy-input"
               required
             />
           </div>
+
+          {therapistId && date && (
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
+                <FaClock className="text-joy-sky" /> שעות פנויות *
+              </p>
+              {slotsLoading && (
+                <p role="status" className="py-3 text-sm text-slate-500">טוען שעות פנויות...</p>
+              )}
+              {!slotsLoading && slotsError && (
+                <p role="alert" className="flex items-center gap-2 py-3 text-sm text-rose-600">
+                  <FaExclamationCircle /> {slotsError}
+                </p>
+              )}
+              {!slotsLoading && !slotsError && slots.length === 0 && (
+                <p className="py-3 text-sm text-slate-500">אין שעות פנויות בתאריך זה.</p>
+              )}
+              {!slotsLoading && !slotsError && slots.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {slots.map((slot) => (
+                    <button
+                      key={slot.startTime}
+                      type="button"
+                      aria-pressed={selectedSlot?.startTime === slot.startTime}
+                      onClick={() => {
+                        setSelectedSlot(slot);
+                        setBookingError('');
+                      }}
+                      className={selectedSlot?.startTime === slot.startTime
+                        ? 'joy-btn-primary justify-center'
+                        : 'joy-btn-soft justify-center'}
+                    >
+                      {formatSlotTime(slot.startTime)}–{formatSlotTime(slot.endTime)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600">
@@ -115,19 +210,19 @@ const BookAppointment = () => {
             />
           </div>
 
-          {error && (
+          {bookingError && (
             <p className="flex items-center gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-              <FaExclamationCircle /> {error}
+              <FaExclamationCircle /> {bookingError}
             </p>
           )}
 
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting || slotsLoading || !selectedSlot}
               className="joy-btn-primary w-full text-sm"
             >
-              {loading ? 'קובע תור...' : 'אישור וקביעת תור 🎊'}
+              {isSubmitting ? 'קובע תור...' : 'אישור וקביעת תור 🎊'}
             </button>
             <button
               type="button"

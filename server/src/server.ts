@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
 import app from "./app.js";
+import { getJwtSecret } from "./config/jwt.js";
 import { initRedis } from "./config/redis.js";
 import { startNotificationWorker } from "./queues/notification.worker.js";
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI =
+  process.env.MONGO_URI ||
   process.env.MONGODB_URI ||
   "mongodb://localhost:27017/clinixhub";
 
@@ -20,6 +22,7 @@ async function connectDB() {
 // הגדרת פונקציית אתחול לניהול הפעולות האסינכרוניות
 const startServer = async () => {
   try {
+    getJwtSecret();
     await connectDB();
 
     // Redis (Cache + Queue) הוא בונוס - אם הוא לא זמין, השרת ממשיך לרוץ כרגיל בלעדיו

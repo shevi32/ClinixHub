@@ -18,6 +18,7 @@ const CreateAppointmentForm = lazy(() => import("./components/forms/CreateAppoin
 const AppointmentsDashboard = lazy(() => import("./components/appointments/AppointmentsDashboard"));
 const PatientsPage = lazy(() => import("./components/patients/PatientsPage"));
 const TreatmentPage = lazy(() => import("./components/treatments/TreatmentPage"));
+const PatientTreatments = lazy(() => import("./pages/PatientTreatments"));
 
 // ╫₧╫ץ╫ª╫ע ╫£╫צ╫₧╫ƒ ╫פ╫º╫ª╫¿ ╫⌐╫ס╫ץ ╫פ╫ף╫ñ╫ף╫ñ╫ƒ ╫₧╫ץ╫¿╫ש╫ף ╫נ╫¬ ╫פ-chunk ╫⌐╫£ ╫פ╫ó╫₧╫ץ╫ף ╫פ╫₧╫ס╫ץ╫º╫⌐
 const PageLoader = () => (
@@ -64,6 +65,15 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={["User"]}>
                 <AppointmentHistory />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/my-treatments"
+            element={
+              <ProtectedRoute allowedRoles={["User"]}>
+                <PatientTreatments />
               </ProtectedRoute>
             }
           />

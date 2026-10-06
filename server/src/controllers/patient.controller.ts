@@ -5,6 +5,7 @@ import {
   createPatientSchema,
   updatePatientSchema,
 } from "../validations/patient.validation.js";
+import { isValidObjectId } from "../utils/validateObjectId.js";
 
 // CREATE patient
 export const createPatient = async (
@@ -97,6 +98,10 @@ export const getPatientById = async (
   next: NextFunction
 ) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid patient ID" });
+    }
+
     const patient = await Patient.findById(req.params.id);
 
     if (!patient) {
@@ -116,6 +121,10 @@ export const updatePatient = async (
   next: NextFunction
 ) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid patient ID" });
+    }
+
     const validatedData = updatePatientSchema.parse(req.body);
 
     const patient = await Patient.findByIdAndUpdate(
@@ -159,6 +168,10 @@ export const deletePatient = async (
   next: NextFunction
 ) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid patient ID" });
+    }
+
     const patient = await Patient.findByIdAndDelete(req.params.id);
 
     if (!patient) {

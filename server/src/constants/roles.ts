@@ -5,4 +5,4 @@
 export const ROLES = {
     THERAPIST: 'Admin',
     PATIENT: 'User'
-};
+} as const;

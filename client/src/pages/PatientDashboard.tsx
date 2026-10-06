@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchAppointments } from '../redux/appointmentSlice';
-import { FaCalendarCheck, FaBolt, FaUserCircle, FaHistory, FaCalendarPlus } from 'react-icons/fa';
+import { FaCalendarCheck, FaBolt, FaUserCircle, FaHistory, FaCalendarPlus, FaClipboardList } from 'react-icons/fa';
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
@@ -91,6 +91,14 @@ const PatientDashboard = () => {
                   className="flex w-full items-center gap-2 font-semibold text-joy-teal hover:underline"
                 >
                   <FaHistory /> צפייה בהיסטוריית טיפולים ותורים
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => navigate('/my-treatments')}
+                  className="flex w-full items-center gap-2 font-semibold text-joy-teal hover:underline"
+                >
+                  <FaClipboardList /> סיכומי הטיפול שלי
                 </button>
               </li>
             </ul>

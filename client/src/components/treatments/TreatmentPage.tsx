@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
-import { FaClipboardList, FaSave, FaIdCard, FaExclamationCircle } from "react-icons/fa";
+import { FaClipboardList, FaSave, FaIdCard, FaExclamationCircle, FaUnlock } from "react-icons/fa";
 
 type Treatment = {
   _id: string;
   patientId: string;
   notes: string;
+  released: boolean;
 };
 
 export default function TreatmentPage() {
@@ -13,11 +14,20 @@ export default function TreatmentPage() {
   const [notes, setNotes] = useState("");
   const [patientId, setPatientId] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [releasingId, setReleasingId] = useState<string | null>(null);
 
   const fetchTreatments = async () => {
-    const response = await api.get('/treatments');
-    const data = response.data;
-    setTreatments(data.data || data);
+    try {
+      setError("");
+      const response = await api.get('/treatments');
+      const data = response.data;
+      setTreatments(data.data || data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "לא ניתן לטעון את סיכומי הטיפול");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -38,6 +48,25 @@ export default function TreatmentPage() {
       fetchTreatments();
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const releaseTreatment = async (treatmentId: string) => {
+    try {
+      setError("");
+      setReleasingId(treatmentId);
+      const response = await api.patch(`/treatments/${treatmentId}/release`);
+      setTreatments((current) =>
+        current.map((treatment) =>
+          treatment._id === treatmentId
+            ? { ...treatment, released: response.data.released }
+            : treatment
+        )
+      );
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "לא ניתן לשחרר את סיכום הטיפול");
+    } finally {
+      setReleasingId(null);
     }
   };
 
@@ -92,6 +121,11 @@ export default function TreatmentPage() {
           </button>
         </div>
 
+        {loading && <p className="py-6 text-center text-slate-500">טוען סיכומי טיפול...</p>}
+        {!loading && !error && treatments.length === 0 && (
+          <p className="joy-card p-4 text-sm text-slate-500">עדיין אין סיכומי טיפול.</p>
+        )}
+
         {/* LIST */}
         <div className="space-y-3">
           {treatments.map((t) => (
@@ -102,6 +136,18 @@ export default function TreatmentPage() {
               <div>
                 <p className="text-xs font-semibold text-slate-400">מטופל/ת: {t.patientId}</p>
                 <p className="mt-1 text-sm text-slate-700">{t.notes}</p>
+                {t.released ? (
+                  <p className="mt-2 text-xs font-semibold text-emerald-700">שוחרר למטופל/ת</p>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={releasingId === t._id}
+                    onClick={() => releaseTreatment(t._id)}
+                    className="joy-btn-primary mt-3 text-sm"
+                  >
+                    <FaUnlock /> {releasingId === t._id ? "משחרר..." : "שחרור למטופל/ת"}
+                  </button>
+                )}
               </div>
             </div>
           ))}

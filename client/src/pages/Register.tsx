@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import api from '../utils/api.js';
 import { useState } from 'react';
-import { FaEnvelope, FaLock, FaUserTag, FaUserPlus, FaExclamationCircle } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaUserPlus, FaExclamationCircle } from 'react-icons/fa';
 import authImage from '../assets/clinic-auth.png';
 
 
@@ -13,7 +13,7 @@ import authImage from '../assets/clinic-auth.png';
 const registerSchema = z.object({
   email: z.string().email('כתובת אימייל אינה תקינה'),
   password: z.string().min(6, 'הסיסמה חייבת להכיל לפחות 6 תווים'),
-  role: z.enum(['Admin', 'User']),
+  role: z.literal('User'),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -94,18 +94,6 @@ export default function Register() {
                 <input type="password" {...register('password')} className="joy-input pr-10" placeholder="••••••••" />
               </div>
               {errors.password && <span className="mt-1 block text-xs font-medium text-rose-500">{errors.password.message}</span>}
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-600">סוג משתמש</label>
-              <div className="relative">
-                <FaUserTag className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <select {...register('role')} className="joy-input appearance-none pr-10">
-                  <option value="User">מטופל / הורה למטופל</option>
-                  <option value="Admin">מטפל מוסמך (מנהל קליניקה)</option>
-                </select>
-              </div>
-              {errors.role && <span className="mt-1 block text-xs font-medium text-rose-500">{errors.role.message}</span>}
             </div>
 
             <button type="submit" disabled={isSubmitting} className="joy-btn-warm w-full text-base">

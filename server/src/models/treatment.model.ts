@@ -5,6 +5,7 @@ const treatmentSchema = new mongoose.Schema(
     patientId: { type: String, required: true },
     appointmentId: { type: String },
     notes: { type: String, required: true },
+    released: { type: Boolean, required: true, default: false },
   },
   { timestamps: true }
 );

@@ -11,6 +11,7 @@ import {
   invalidateAvailableSlotsCache,
 } from "../services/availability.service.js";
 import { enqueueAppointmentNotification } from "../queues/notification.queue.js";
+import { isValidObjectId } from "../utils/validateObjectId.js";
 
 /** מחזיר true אם המשתמש המחובר הוא מטפל (רואה הכול), false אם הוא מטופל רגיל */
 const isTherapist = (req: Request) =>
@@ -43,6 +44,7 @@ export const createAppointment = async (
     // conflict check
     const conflict = await Appointment.findOne({
       therapistId: validatedData.therapistId,
+      status: { $ne: "cancelled" },
       startTime: {
         $lt: validatedData.endTime,
       },
@@ -254,6 +256,10 @@ export const getAppointmentById = async (
   try {
     const { id } = req.params;
 
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: "Invalid appointment ID" });
+    }
+
     const appointment =
       await Appointment.findById(id);
 
@@ -292,6 +298,10 @@ export const updateAppointment = async (
   try {
     const { id } = req.params;
 
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: "Invalid appointment ID" });
+    }
+
     // validation
     const validatedData = updateAppointmentSchema.parse(req.body);
 
@@ -312,9 +322,18 @@ export const updateAppointment = async (
       });
     }
 
-    // מטופל לא רשאי "להעביר" תור למטופל אחר ע"י שינוי patientId בגוף הבקשה - מתעלמים מזה עבורו
     if (!isTherapist(req)) {
-      delete validatedData.patientId;
+      return res.status(403).json({
+        success: false,
+        message: "Patients cannot update appointment details",
+      });
+    }
+
+    if (validatedData.patientId !== undefined || validatedData.therapistId !== undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment ownership cannot be changed",
+      });
     }
 
     // =========================
@@ -337,6 +356,7 @@ export const updateAppointment = async (
     const conflict = await Appointment.findOne({
       _id: { $ne: id },
       therapistId: updatedTherapistId,
+      status: { $ne: "cancelled" },
       startTime: { $lt: updatedEndTime },
       endTime: { $gt: updatedStartTime },
     });
@@ -403,6 +423,10 @@ export const deleteAppointment = async (
   try {
     const { id } = req.params;
 
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: "Invalid appointment ID" });
+    }
+
     const appointment =
       await Appointment.findByIdAndDelete(
         id
@@ -437,6 +461,10 @@ export const cancelAppointment = async (
 ) => {
   try {
     const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: "Invalid appointment ID" });
+    }
 
     const appointment =
       await Appointment.findById(id);

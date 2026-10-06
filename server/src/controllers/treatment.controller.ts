@@ -6,6 +6,7 @@ import {
   createTreatmentSchema,
   updateTreatmentSchema,
 } from "../validations/treatment.validation.js";
+import { isValidObjectId } from "../utils/validateObjectId.js";
 
 export const createTreatment = async (
   req: Request,
@@ -90,12 +91,35 @@ export const getTreatments = async (
   }
 };
 
+export const getMyReleasedTreatments = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const patientId = (req as any).user?.id;
+    const treatments = await Treatment.find({ patientId, released: true })
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: treatments,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getTreatmentById = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid treatment ID" });
+    }
+
     const treatment = await Treatment.findById(req.params.id);
 
     if (!treatment) {
@@ -110,7 +134,37 @@ export const getTreatmentById = async (
       });
     }
 
+    if (user?.role !== ROLES.THERAPIST && !treatment.released) {
+      return res.status(403).json({ message: "Treatment summary is not released" });
+    }
+
     res.json(treatment);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const releaseTreatment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid treatment ID" });
+    }
+
+    const treatment = await Treatment.findByIdAndUpdate(
+      req.params.id,
+      { released: true },
+      { new: true, runValidators: true }
+    );
+
+    if (!treatment) {
+      return next(new CustomError("Treatment not found", 404));
+    }
+
+    return res.status(200).json(treatment);
   } catch (err) {
     next(err);
   }
@@ -122,6 +176,10 @@ export const updateTreatment = async (
   next: NextFunction
 ) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid treatment ID" });
+    }
+
     const validatedData = updateTreatmentSchema.parse(req.body);
 
     const treatment = await Treatment.findByIdAndUpdate(
@@ -157,6 +215,10 @@ export const deleteTreatment = async (
   next: NextFunction
 ) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid treatment ID" });
+    }
+
     const treatment = await Treatment.findByIdAndDelete(req.params.id);
 
     if (!treatment) {

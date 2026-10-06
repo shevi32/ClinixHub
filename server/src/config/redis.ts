@@ -32,9 +32,22 @@ redisConnection.on("error", (err: Error) => {
 
 // מנסים להתחבר פעם אחת באתחול השרת; כישלון לא מפיל את השרת (התכונה היא בונוס)
 export const initRedis = async (): Promise<void> => {
+  const redisConnectTimeoutMs = 3000;
+
   try {
-    await redisConnection.connect();
+    await Promise.race([
+      redisConnection.connect(),
+      new Promise<void>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`Redis connection timed out after ${redisConnectTimeoutMs}ms`)),
+          redisConnectTimeoutMs
+        )
+      ),
+    ]);
   } catch {
+    if (redisConnection.status !== "end") {
+      redisConnection.disconnect();
+    }
     console.warn(
       "Redis is not available - skipping cache/queue features (this is an optional bonus feature, the app works fine without it)."
     );

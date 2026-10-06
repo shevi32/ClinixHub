@@ -3,8 +3,10 @@ import {
   createTreatment,
   deleteTreatment,
   getTreatments,
+  getMyReleasedTreatments,
   getTreatmentById,
   updateTreatment,
+  releaseTreatment,
 } from "../controllers/treatment.controller.js";
 import { verifyToken } from "../middlewares/authMiddleware.js";
 import { checkRole } from "../middlewares/roleMiddleware.js";
@@ -20,6 +22,12 @@ router.post("/", checkRole(ROLES.THERAPIST), createTreatment);
 
 // GET ALL - רשימת כל סיכומי הטיפול, שמורה למטפל בלבד
 router.get("/", checkRole(ROLES.THERAPIST), getTreatments);
+
+// Patient summaries are always scoped to the authenticated user and released state.
+router.get("/my", checkRole(ROLES.PATIENT), getMyReleasedTreatments);
+
+// Explicitly release a treatment summary to its patient.
+router.patch("/:id/release", checkRole(ROLES.THERAPIST), releaseTreatment);
 
 // GET BY ID - מטפל רואה הכול, מטופל רואה רק את סיכום הטיפול שלו עצמו
 router.get("/:id", checkRole([ROLES.THERAPIST, ROLES.PATIENT]), getTreatmentById);

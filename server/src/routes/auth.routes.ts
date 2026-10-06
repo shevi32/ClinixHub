@@ -2,54 +2,70 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { ROLES } from "../constants/roles.js";
+import { User } from "../models/UserModel.js";
+import { Patient } from "../models/patient.model.js";
+import { getJwtSecret } from "../config/jwt.js";
 
 const router = express.Router();
-
-// In-memory users store for local development only
-const users: any[] = [];
-
-// Seed a test user for local development
-const seedHash = bcrypt.hashSync("P@ssw0rd123", 10);
-users.push({ id: "seed-1", email: "test.user@example.com", passwordHash: seedHash, role: ROLES.PATIENT });
 
 const mapRoleToClientRole = (role: string) => {
   if (role === ROLES.THERAPIST || role === 'Admin') return "Admin";
   return "User";
 };
 
-const mapClientRoleToServerRole = (clientRole: string) => {
-  return clientRole === 'Admin' || clientRole === ROLES.THERAPIST
-    ? ROLES.THERAPIST
-    : ROLES.PATIENT;
-};
-
 router.post("/register", async (req, res) => {
+  let createdUserId: string | undefined;
   try {
-    const { email, password, role } = req.body as { email: string; password: string; role?: string };
+    const { email, password } = req.body as { email: string; password: string };
     if (!email || !password) return res.status(400).json({ error: "email and password are required" });
 
-    const existing = users.find((u) => u.email === email);
-    if (existing) return res.status(409).json({ message: "User already exists" });
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingPatient = await Patient.findOne({ email: normalizedEmail });
+    if (existingPatient?.userId) {
+      return res.status(409).json({ message: "Patient email is already linked to an account" });
+    }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const assignedRole = mapClientRoleToServerRole(role || 'User');
-    const clientRole = mapRoleToClientRole(assignedRole);
+    const newUser = await User.create({
+      ...(existingPatient ? { _id: existingPatient._id } : {}),
+      email: normalizedEmail,
+      passwordHash,
+      role: ROLES.PATIENT,
+    });
+    createdUserId = String(newUser._id);
 
-    const newUser = { id: Date.now().toString(), email, passwordHash, role: assignedRole };
-    users.push(newUser);
+    if (existingPatient) {
+      existingPatient.userId = createdUserId;
+      await existingPatient.save();
+    } else {
+      await Patient.create({
+        _id: newUser._id,
+        userId: createdUserId,
+        name: normalizedEmail.split("@")[0] || normalizedEmail,
+        email: normalizedEmail,
+      });
+    }
+
+    const clientRole = mapRoleToClientRole(newUser.role);
 
     const token = jwt.sign(
-      { id: newUser.id, role: clientRole }, 
-      process.env.JWT_SECRET || "dev-secret", 
+      { id: String(newUser._id), role: clientRole },
+      getJwtSecret(),
       { expiresIn: "1h" }
     );
 
     return res.status(201).json({
       message: "User registered successfully",
       token,
-      user: { id: newUser.id, email: newUser.email, role: clientRole },
+      user: { id: String(newUser._id), email: newUser.email, role: clientRole },
     });
   } catch (err: any) {
+    if (createdUserId) {
+      await User.deleteOne({ _id: createdUserId }).catch(() => undefined);
+    }
+    if (err.code === 11000) {
+      return res.status(409).json({ message: "User already exists" });
+    }
     return res.status(500).json({ error: err.message || "Server error" });
   }
 });
@@ -59,7 +75,7 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body as { email: string; password: string };
     if (!email || !password) return res.status(400).json({ error: "email and password are required" });
 
-    const user = users.find((u) => u.email === email);
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
@@ -67,14 +83,14 @@ router.post("/login", async (req, res) => {
 
     const clientRole = mapRoleToClientRole(user.role);
     const token = jwt.sign(
-      { id: user.id, role: clientRole }, 
-      process.env.JWT_SECRET || "dev-secret", 
+      { id: String(user._id), role: clientRole },
+      getJwtSecret(),
       { expiresIn: "1h" }
     );
 
     return res.json({
       token,
-      user: { id: user.id, email: user.email, role: clientRole },
+      user: { id: String(user._id), email: user.email, role: clientRole },
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || "Server error" });
