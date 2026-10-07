@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Redis } from "ioredis";
 
 /**
@@ -11,6 +12,7 @@ import { Redis } from "ioredis";
 const REDIS_URL = process.env.REDIS_URL || "redis://127.0.0.1:6379";
 
 let isRedisAvailable = false;
+let redisStartupFailed = false;
 
 export const redisConnection = new Redis(REDIS_URL, {
   maxRetriesPerRequest: null,
@@ -18,7 +20,8 @@ export const redisConnection = new Redis(REDIS_URL, {
   retryStrategy: () => null,
 });
 
-redisConnection.on("connect", () => {
+redisConnection.on("ready", () => {
+  if (redisStartupFailed) return;
   isRedisAvailable = true;
   console.log("Redis connected successfully 🚀 (cache + queue enabled)");
 });
@@ -35,23 +38,49 @@ export const initRedis = async (): Promise<void> => {
   const redisConnectTimeoutMs = 3000;
 
   try {
-    await Promise.race([
-      redisConnection.connect(),
-      new Promise<void>((_, reject) =>
-        setTimeout(
-          () => reject(new Error(`Redis connection timed out after ${redisConnectTimeoutMs}ms`)),
-          redisConnectTimeoutMs
-        )
-      ),
-    ]);
+    await new Promise<void>((resolve, reject) => {
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      const cleanup = () => {
+        if (timeout) clearTimeout(timeout);
+        redisConnection.removeListener("ready", onReady);
+        redisConnection.removeListener("end", onEnd);
+        redisConnection.removeListener("error", onError);
+      };
+      const onReady = () => {
+        cleanup();
+        resolve();
+      };
+      const onEnd = () => {
+        cleanup();
+        reject(new Error("Redis connection ended before becoming ready"));
+      };
+      const onError = (error: Error) => {
+        cleanup();
+        reject(error);
+      };
+
+      redisConnection.once("ready", onReady);
+      redisConnection.once("end", onEnd);
+      redisConnection.once("error", onError);
+      timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error(`Redis connection timed out after ${redisConnectTimeoutMs}ms`));
+      }, redisConnectTimeoutMs);
+
+      if (redisConnection.status === "ready") onReady();
+      else if (redisConnection.status === "end") onEnd();
+      else if (redisConnection.status === "wait") {
+        redisConnection.connect().catch(onError);
+      }
+    });
   } catch {
-    if (redisConnection.status !== "end") {
-      redisConnection.disconnect();
-    }
+    isRedisAvailable = false;
+    redisStartupFailed = true;
     console.warn(
       "Redis is not available - skipping cache/queue features (this is an optional bonus feature, the app works fine without it)."
     );
   }
 };
 
-export const isRedisReady = () => isRedisAvailable;
+export const isRedisReady = () =>
+  isRedisAvailable && !redisStartupFailed && redisConnection.status === "ready";

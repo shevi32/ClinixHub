@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { Appointment } from "../models/appointment.model.js";
+import { User } from "../models/UserModel.js";
 import {
   createAppointmentSchema,
   updateAppointmentSchema,
@@ -40,6 +41,25 @@ export const createAppointment = async (
     const effectivePatientId = isTherapist(req)
       ? validatedData.patientId
       : currentUserId(req);
+
+    const [patientExists, therapistExists] = await Promise.all([
+      User.exists({ _id: effectivePatientId }),
+      User.exists({ _id: validatedData.therapistId, role: ROLES.THERAPIST }),
+    ]);
+
+    if (!patientExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Patient not found",
+      });
+    }
+
+    if (!therapistExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Therapist not found",
+      });
+    }
 
     // conflict check
     const conflict = await Appointment.findOne({
@@ -181,6 +201,25 @@ export const getAppointments = async (
           total / Number(limit)
         ),
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTherapists = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const therapists = await User.find({ role: ROLES.THERAPIST })
+      .select("_id email")
+      .sort({ email: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: therapists,
     });
   } catch (error) {
     next(error);

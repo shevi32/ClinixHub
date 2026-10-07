@@ -16,6 +16,12 @@ export const notificationQueue = new Queue<AppointmentConfirmationJob>(
   { connection: redisConnection }
 );
 
+notificationQueue.on("error", (err) => {
+  if (isRedisReady()) {
+    console.error("Notification queue error:", err.message);
+  }
+});
+
 /**
  * מכניס משימת התראה לתור (BullMQ). כשמטופל קובע/מבטל תור, השרת לא שולח מייל/SMS
  * ישירות ובאופן חוסם - הוא רק מכניס "משימה" לתור, וה-Worker (notification.worker.ts)

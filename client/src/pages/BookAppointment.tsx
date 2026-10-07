@@ -9,11 +9,17 @@ type AvailableSlot = {
   endTime: string;
 };
 
+type Therapist = {
+  _id: string;
+  email: string;
+};
+
 const BookAppointment = () => {
   const navigate = useNavigate();
   // שליפת המשתמש המחובר
   const user = useSelector((state: any) => state.auth?.user || state.auth?.patient);
   
+  const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [therapistId, setTherapistId] = useState('');
   const [date, setDate] = useState('');
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
@@ -31,6 +37,26 @@ const BookAppointment = () => {
       .toISOString()
       .slice(0, 10);
   };
+
+  useEffect(() => {
+    let isCurrentRequest = true;
+
+    api.get('/appointments/therapists')
+      .then((response) => {
+        if (isCurrentRequest) {
+          setTherapists(response.data.data || []);
+        }
+      })
+      .catch(() => {
+        if (isCurrentRequest) {
+          setTherapists([]);
+        }
+      });
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!therapistId || !date) {
@@ -136,8 +162,11 @@ const BookAppointment = () => {
               required
             >
               <option value="">-- בחר מרשימה --</option>
-              <option value="therapist_1">ד"ר ישראלי ישראל</option>
-              <option value="therapist_2">פרופ' כהן שרה</option>
+              {therapists.map((therapist) => (
+                <option key={therapist._id} value={therapist._id}>
+                  {therapist.email}
+                </option>
+              ))}
             </select>
           </div>
 

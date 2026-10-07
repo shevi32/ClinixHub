@@ -3,6 +3,7 @@ import express from "express";
 import {
   createAppointment,
   getAppointments,
+  getTherapists,
   getAvailableSlots,
   getAppointmentsByPatient,
   getAppointmentById,
@@ -25,6 +26,9 @@ router.post("/", createAppointment);
 
 // קבלת כל התורים - לוח הזמנים המלא חשוף למטפל בלבד
 router.get("/", checkRole(ROLES.THERAPIST), getAppointments);
+
+// קבלת מטרי המטפלים למשתמשים כדי לבחור את המטפל המוגה בקטע
+router.get("/therapists", checkRole([ROLES.THERAPIST, ROLES.PATIENT]), getTherapists);
 
 // קבלת שעות פנויות למטפל ביום נתון (Redis Cache) - שני התפקידים יכולים לצפות בלוח הפנוי
 router.get("/available-slots", getAvailableSlots);
